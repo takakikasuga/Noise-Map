@@ -1,0 +1,13 @@
+[project]
+name = "hikkoshinoise-pipeline"
+version = "0.1.0"
+description = "ヒッコシノイズ データパイプライン - 東京都の住環境リスクデータを収集・加工"
+requires-python = ">=3.12"
+readme = "README.md"
+
+[project.scripts]
+fetch-stations = "scripts.01_fetch_stations:main"
+fetch-safety = "scripts.02_fetch_safety:main"
+fetch-hazard = "scripts.03_fetch_hazard:main"
+fetch-vibe = "scripts.04_fetch_vibe:main"
+calculate-scores = "scripts.05_calculate_scores:main"
