@@ -1,7 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { ScoreGauge } from '@hikkoshinoise/ui';
+
+const CrimeTrendChart = dynamic(
+  () => import('@/components/chart/CrimeTrendChart').then(m => m.CrimeTrendChart),
+  { ssr: false, loading: () => <div className="h-[250px] animate-pulse bg-gray-100 rounded" /> }
+);
+const CrimeBreakdownChart = dynamic(
+  () => import('@/components/chart/CrimeBreakdownChart').then(m => m.CrimeBreakdownChart),
+  { ssr: false, loading: () => <div className="h-[200px] animate-pulse bg-gray-100 rounded" /> }
+);
 
 /** クライアントに渡すデータの最小型 (server-serialization) */
 interface SafetyData {
@@ -71,6 +81,27 @@ export function SafetySection({ data }: SafetySectionProps) {
             {d.year}
           </button>
         ))}
+      </div>
+
+      {/* 犯罪件数推移チャート */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-gray-600">犯罪件数の推移</h3>
+        <CrimeTrendChart
+          data={sorted.map(d => ({ year: d.year, totalCrimes: d.totalCrimes }))}
+          selectedYear={selectedYear}
+        />
+      </div>
+
+      {/* 犯罪種別内訳チャート */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-gray-600">{selectedYear}年 犯罪種別内訳</h3>
+        <CrimeBreakdownChart
+          crimesViolent={selected.crimesViolent}
+          crimesAssault={selected.crimesAssault}
+          crimesTheft={selected.crimesTheft}
+          crimesIntellectual={selected.crimesIntellectual}
+          crimesOther={selected.crimesOther}
+        />
       </div>
 
       <table className="w-full text-sm">
