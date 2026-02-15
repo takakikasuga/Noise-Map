@@ -257,7 +257,7 @@ export default function MethodologyPage() {
           </li>
           <li className="flex gap-2">
             <span className="text-green-600 font-bold">&#10003;</span>
-            対応年度: 2023年（令和5年）・2024年（令和6年）・2025年（令和7年）
+            対応年度: 2017年（平成29年）〜2025年（令和7年）の9年分
           </li>
           <li className="flex gap-2">
             <span className="text-amber-500 font-bold">&#9888;</span>
