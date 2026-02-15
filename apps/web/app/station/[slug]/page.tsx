@@ -14,6 +14,7 @@ import {
 import { SafetySection } from '@/components/station/SafetySection';
 import { HazardSection } from '@/components/station/HazardSection';
 import { VibeSection } from '@/components/station/VibeSection';
+import { StationMap } from '@/components/map/StationMap';
 
 /** SSG: 全駅のスラッグを生成 */
 export async function generateStaticParams() {
@@ -66,6 +67,8 @@ export default async function StationPage({
   const name = station.name as string;
   const municipalityName = station.municipalityName as string;
   const lines = (station.lines as string[]) ?? [];
+  const lat = station.lat as number;
+  const lng = station.lng as number;
 
   // SafetySection に渡すデータ: クライアント送信量を最小化 (server-serialization)
   const safetyForClient = safetyData.map((d) => {
@@ -155,10 +158,10 @@ export default async function StationPage({
         )}
       </section>
 
-      {/* 地図プレースホルダー */}
-      <section className="rounded-lg border bg-white p-6 text-center text-gray-400">
-        <h2 className="text-xl font-semibold text-gray-900">周辺マップ</h2>
-        <p className="mt-2">地図機能は近日公開</p>
+      {/* 周辺マップ */}
+      <section className="rounded-lg border bg-white p-6">
+        <h2 className="mb-4 text-xl font-semibold">周辺マップ</h2>
+        <StationMap lat={lat} lng={lng} stationName={name} />
       </section>
 
       {/* 口コミプレースホルダー */}
