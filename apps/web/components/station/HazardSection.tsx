@@ -28,7 +28,7 @@ export function HazardSection({ data }: HazardSectionProps) {
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">⚠️ 災害リスク (Hazard)</h2>
 
-      <ScoreGauge score={data.score} label="災害リスクスコア" />
+      <ScoreGauge score={data.score} label="災害リスク偏差値" />
 
       <div className="space-y-3">
         {subScores.map((s) => (

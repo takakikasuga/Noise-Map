@@ -61,7 +61,7 @@ export function SafetySection({ data }: SafetySectionProps) {
       <h2 className="text-xl font-semibold">🛡️ 治安 (Safety)</h2>
 
       <div className="flex items-center gap-6">
-        <ScoreGauge score={selected.score} label="治安スコア" />
+        <ScoreGauge score={selected.score} label="治安偏差値" />
         {selected.rank != null && (
           <p className="text-sm text-gray-600">659駅中 <span className="font-bold text-lg">{selected.rank}</span>位</p>
         )}

@@ -294,7 +294,7 @@ export function CompareContent() {
                 ))}
               </tr>
               <tr className="border-b bg-green-50">
-                <td className="px-4 py-3 font-medium text-green-800">治安スコア</td>
+                <td className="px-4 py-3 font-medium text-green-800">治安偏差値</td>
                 {selectedSlugs.map((slug) => (
                   <td key={slug} className="px-4 py-3 text-center font-bold text-lg">
                     {stationData.get(slug)?.safety?.score.toFixed(1) ?? '-'}

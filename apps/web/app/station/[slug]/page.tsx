@@ -111,7 +111,7 @@ export default async function StationPage({
 
       {/* スコアサマリー */}
       <section className="rounded-lg border bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold">ノイズスコア</h2>
+        <h2 className="mb-4 text-lg font-semibold">ノイズ偏差値</h2>
         <div className="flex flex-wrap gap-8 justify-center">
           {latestSafety && (
             <ScoreGauge score={latestSafety.score} label="治安" size="lg" />
@@ -125,7 +125,7 @@ export default async function StationPage({
           )}
         </div>
         {!latestSafety && !hazardData && (
-          <p className="text-center text-gray-400">スコアデータは準備中です</p>
+          <p className="text-center text-gray-400">偏差値データは準備中です</p>
         )}
       </section>
 

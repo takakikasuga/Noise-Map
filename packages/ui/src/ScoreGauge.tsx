@@ -4,7 +4,7 @@ interface ScoreGaugeProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-/** スコアゲージコンポーネント（円形プログレス） */
+/** 偏差値ゲージコンポーネント（円形プログレス） */
 export function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProps) {
   // スコアに応じた色変化
   const getColor = (s: number): string => {
