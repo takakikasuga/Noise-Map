@@ -4,6 +4,8 @@
 """
 
 import math
+from typing import Optional
+
 import numpy as np
 
 
@@ -67,10 +69,10 @@ def calculate_safety_score(crimes: int, all_crimes: list[int]) -> float:
 
 
 def calculate_hazard_score(
-    flood_depth: float | None,
+    flood_depth: Optional[float],
     landslide_warning: bool,
     landslide_special: bool,
-    tsunami_depth: float | None,
+    tsunami_depth: Optional[float],
     liquefaction_risk: str,
 ) -> tuple[float, float, float, float, float]:
     """

@@ -1,81 +1,259 @@
+#!/usr/bin/env python3
 """
-02_fetch_safety.py - 治安データ取得
+治安データ取得。
 
-警視庁の犯罪統計データ（CSV/Excel）をパースし、
-駅ごとの犯罪件数を集計して safety_scores テーブルに INSERT する。
+警視庁の犯罪統計CSV（町丁目レベル）をパースし、
+town_crimes テーブルに INSERT + 駅ごとの safety_scores を算出する。
 
-データソース:
-  - 警視庁「区市町村の町丁別、罪種別及び手口別認知件数」
-    https://www.keishicho.metro.tokyo.lg.jp/about_mpd/jokyo_tokei/jokyo/ninchikensu.html
-
-実行方法:
-  python scripts/02_fetch_safety.py --data-path data/safety/crime_data.csv --year 2024
+データソース: 警視庁「区市町村の町丁別、罪種別及び手口別認知件数」
+出力テーブル: town_crimes, safety_scores
+更新頻度: 年次
 """
 
 import argparse
 import logging
 import sys
+from pathlib import Path
 
-sys.path.insert(0, ".")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib.supabase_client import upsert_records, select_all
-from lib.normalizer import calculate_safety_score
-from config.settings import DATA_DIR
+from lib.crime_parser import (
+    attach_boundaries,
+    load_boundaries,
+    parse_crime_csv,
+)
+from lib.normalizer import normalize_score
+from lib.supabase_client import get_client, upsert_records, select_all
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 logger = logging.getLogger(__name__)
 
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+DEFAULT_SHP = str(DATA_DIR / "administrative_area" / "tokyo" / "r2ka13.shp")
+CSV_FILES = {
+    2023: str(DATA_DIR / "metropolitan" / "R5.csv"),
+    2024: str(DATA_DIR / "metropolitan" / "R6.csv"),
+    2025: str(DATA_DIR / "metropolitan" / "R7" / "R7.11.csv"),
+}
 
-def main():
+
+def upsert_town_crimes(records: list[dict], dry_run: bool) -> int:
+    """town_crimes テーブルに UPSERT（バッチ処理）"""
+    if dry_run:
+        logger.info("[DRY RUN] town_crimes: %d 件", len(records))
+        for r in records[:10]:
+            has_geo = "○" if r.get("boundary") else "×"
+            logger.info(
+                "  %s | %s | 犯罪計=%d | ポリゴン=%s",
+                r["area_name"], r["municipality_name"],
+                r["total_crimes"], has_geo,
+            )
+        if len(records) > 10:
+            logger.info("  ... 他 %d 件", len(records) - 10)
+        return len(records)
+
+    client = get_client()
+    batch_size = 100
+    total = 0
+    for i in range(0, len(records), batch_size):
+        batch = records[i : i + batch_size]
+        result = client.table("town_crimes").upsert(
+            batch, on_conflict="area_name,year"
+        ).execute()
+        total += len(result.data) if result.data else 0
+        if (i + batch_size) % 500 == 0 or i + batch_size >= len(records):
+            logger.info("  town_crimes upsert: %d / %d", min(i + batch_size, len(records)), len(records))
+    return total
+
+
+def compute_station_scores(year: int, dry_run: bool) -> int:
+    """
+    town_crimes を区市町村レベルで集計し、各駅の safety_scores を算出。
+    """
+    client = get_client()
+
+    # 駅一覧取得
+    stations = select_all("stations", "id,name,municipality_code,municipality_name")
+    logger.info("駅数: %d", len(stations))
+
+    # town_crimes を区市町村別に集計（ページネーションで全行取得）
+    cols = "municipality_code,total_crimes,crimes_violent,crimes_assault,crimes_theft,crimes_intellectual,crimes_other"
+    rows = []
+    page_size = 1000
+    offset = 0
+    while True:
+        page = (
+            client.table("town_crimes")
+            .select(cols)
+            .eq("year", year)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        batch = page.data or []
+        rows.extend(batch)
+        if len(batch) < page_size:
+            break
+        offset += page_size
+    logger.info("town_crimes 取得行数: %d", len(rows))
+
+    muni_agg: dict[str, dict] = {}
+    for r in rows:
+        code = r["municipality_code"]
+        if code not in muni_agg:
+            muni_agg[code] = {
+                "total_crimes": 0, "crimes_violent": 0, "crimes_assault": 0,
+                "crimes_theft": 0, "crimes_intellectual": 0, "crimes_other": 0,
+            }
+        for key in muni_agg[code]:
+            muni_agg[code][key] += r[key]
+
+    logger.info("集計済み市区町村: %d", len(muni_agg))
+
+    # 前年データ取得（previous_year_total 用）
+    prev_year = year - 1
+    prev_rows = []
+    offset = 0
+    while True:
+        page = (
+            client.table("town_crimes")
+            .select("municipality_code,total_crimes")
+            .eq("year", prev_year)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        batch = page.data or []
+        prev_rows.extend(batch)
+        if len(batch) < page_size:
+            break
+        offset += page_size
+    prev_agg: dict[str, int] = {}
+    for r in prev_rows:
+        code = r["municipality_code"]
+        prev_agg[code] = prev_agg.get(code, 0) + r["total_crimes"]
+
+    # 各駅にスコア付与
+    station_crimes = []
+    for s in stations:
+        code = s["municipality_code"]
+        agg = muni_agg.get(code)
+        if agg is None:
+            continue
+        station_crimes.append({
+            "station": s,
+            "crimes": agg,
+            "prev_total": prev_agg.get(code),
+        })
+
+    # 全駅の total_crimes を集めてスコア算出
+    all_totals = [sc["crimes"]["total_crimes"] for sc in station_crimes]
+    # 犯罪が少ないほど高スコア → 反転して偏差値化
+    if all_totals:
+        max_val = max(all_totals)
+        inverted = [max_val - t for t in all_totals]
+        scores = normalize_score(inverted)
+    else:
+        scores = []
+
+    # ランキング（スコア降順）
+    indexed_scores = sorted(enumerate(scores), key=lambda x: -x[1])
+    rank_map = {idx: rank + 1 for rank, (idx, _) in enumerate(indexed_scores)}
+
+    # レコード作成
+    records = []
+    for i, sc in enumerate(station_crimes):
+        records.append({
+            "station_id": sc["station"]["id"],
+            "year": year,
+            "total_crimes": sc["crimes"]["total_crimes"],
+            "crimes_violent": sc["crimes"]["crimes_violent"],
+            "crimes_assault": sc["crimes"]["crimes_assault"],
+            "crimes_theft": sc["crimes"]["crimes_theft"],
+            "crimes_intellectual": sc["crimes"]["crimes_intellectual"],
+            "crimes_other": sc["crimes"]["crimes_other"],
+            "score": round(scores[i], 1) if i < len(scores) else 50.0,
+            "rank": rank_map.get(i),
+            "previous_year_total": sc["prev_total"],
+        })
+
+    if dry_run:
+        logger.info("[DRY RUN] safety_scores: %d 件", len(records))
+        # 上位・下位5駅を表示
+        by_score = sorted(
+            zip(station_crimes, records), key=lambda x: -x[1]["score"]
+        )
+        logger.info("  === 安全な駅 TOP 5 ===")
+        for sc, rec in by_score[:5]:
+            logger.info(
+                "  #%d %s (%s) | 犯罪計=%d | スコア=%.1f",
+                rec["rank"], sc["station"]["name"],
+                sc["station"]["municipality_name"],
+                rec["total_crimes"], rec["score"],
+            )
+        logger.info("  === 犯罪が多い駅 TOP 5 ===")
+        for sc, rec in by_score[-5:]:
+            logger.info(
+                "  #%d %s (%s) | 犯罪計=%d | スコア=%.1f",
+                rec["rank"], sc["station"]["name"],
+                sc["station"]["municipality_name"],
+                rec["total_crimes"], rec["score"],
+            )
+        return len(records)
+
+    count = upsert_records("safety_scores", records, on_conflict="station_id,year")
+    return count
+
+
+def main(args):
     """メイン処理"""
-    parser = argparse.ArgumentParser(
-        description="警視庁犯罪データを取得・加工し、駅ごとの治安スコアを算出する"
-    )
-    parser.add_argument(
-        "--data-path",
-        type=str,
-        required=True,
-        help="犯罪データファイルのパス（CSV or Excel）",
-    )
-    parser.add_argument(
-        "--year",
-        type=int,
-        required=True,
-        help="対象年度",
-    )
-    parser.add_argument(
-        "--month",
-        type=int,
-        default=None,
-        help="対象月（省略時は年間データ）",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="DB書き込みを行わずに処理結果を表示",
-    )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="詳細ログを出力",
-    )
-    args = parser.parse_args()
+    logger.info("開始: 治安データ取得")
 
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    )
+    # 1. 境界データ読み込み
+    boundaries = load_boundaries(args.shp_path)
 
-    logger.info("=== 治安データ取得開始 (年度: %d) ===", args.year)
+    # 2. 処理対象年を決定
+    if args.year:
+        years = {args.year: CSV_FILES[args.year]}
+    else:
+        years = CSV_FILES
 
-    # TODO: 以下の処理を実装
-    # 1. CSV/Excel を pandas で読み込み
-    # 2. 区市町村別・罪種別の件数を集計
-    # 3. 全駅を取得し、各駅の所属区市町村の犯罪件数を紐付け
-    # 4. normalize_score で全駅のスコアを計算
-    # 5. safety_scores テーブルに UPSERT
+    # 3. 各年のCSVを処理
+    for year, csv_path in years.items():
+        logger.info("=== %d年 データ処理 ===", year)
 
-    logger.info("=== 治安データ取得完了 ===")
+        # 3a. CSVパース
+        records = parse_crime_csv(csv_path, year)
+        if args.limit:
+            records = records[: args.limit]
+
+        # 3b. ポリゴン付与
+        records = attach_boundaries(records, boundaries)
+
+        # 3c. town_crimes UPSERT
+        count = upsert_town_crimes(records, args.dry_run)
+        logger.info("%d年 town_crimes: %d 件処理", year, count)
+
+    # 4. 駅ごとの safety_scores 算出
+    for year in years:
+        logger.info("=== %d年 駅スコア算出 ===", year)
+        count = compute_station_scores(year, args.dry_run)
+        logger.info("%d年 safety_scores: %d 件処理", year, count)
+
+    logger.info("完了")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--shp-path", type=str, default=DEFAULT_SHP, help="境界Shapefileパス")
+    parser.add_argument("--year", type=int, choices=[2023, 2024, 2025], help="処理する年（省略時は全年）")
+    parser.add_argument("--dry-run", action="store_true", help="DB に書き込まない")
+    parser.add_argument("--limit", type=int, default=0, help="処理件数制限（デバッグ用）")
+    parser.add_argument("--verbose", "-v", action="store_true", help="詳細ログを出力")
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    main(args)

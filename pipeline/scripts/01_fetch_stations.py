@@ -1,52 +1,130 @@
+#!/usr/bin/env python3
 """
-01_fetch_stations.py - 駅マスタ取得
+駅マスタ取得。
 
-国土数値情報の駅データ（GML）をパースし、
-東京都の全駅をSupabase の stations テーブルに INSERT する。
+国土数値情報の駅データ（GeoJSON）をパースし、
+東京都の全駅を Supabase の stations テーブルに UPSERT する。
 
-データソース:
-  - 国土数値情報「鉄道データ（N02）」
-    https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-v3_1.html
-
-実行方法:
-  python scripts/01_fetch_stations.py --gml-path data/N02-23_GML/N02-23_Station.gml
+データソース: 国土数値情報「鉄道データ（N02）」
+出力テーブル: stations
+更新頻度: 年次
 """
 
 import argparse
 import logging
 import sys
+from pathlib import Path
 
-# プロジェクトルートをパスに追加
-sys.path.insert(0, ".")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from lib.geo_utils import (
+    batch_reverse_geocode,
+    ensure_unique_slugs,
+    parse_station_geojson,
+)
 from lib.supabase_client import upsert_records
-from lib.geo_utils import parse_gml_stations, find_municipality
-from config.settings import TOKYO_PREFECTURE_CODE
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 logger = logging.getLogger(__name__)
 
+DEFAULT_GEOJSON = str(
+    Path(__file__).resolve().parent.parent
+    / "data"
+    / "raw"
+    / "transportation"
+    / "N02-22_GML"
+    / "UTF-8"
+    / "N02-22_Station.geojson"
+)
 
-def main():
+
+def main(args):
     """メイン処理"""
-    parser = argparse.ArgumentParser(
-        description="国土数値情報GMLから東京都の駅マスタを取得し、Supabaseに登録する"
-    )
+    logger.info("開始: 駅マスタ取得")
+
+    # 1. GeoJSON パース → 東京バウンディングボックスで粗くフィルタ
+    stations = parse_station_geojson(args.geojson_path)
+    logger.info("Step 1 完了: %d 駅候補を抽出", len(stations))
+
+    if args.limit:
+        stations = stations[: args.limit]
+        logger.info("--limit %d: 先頭 %d 件に制限", args.limit, len(stations))
+
+    # 2. 逆ジオコーディング → 市区町村コード付与 + 東京都のみに絞り込み
+    if args.skip_geocode:
+        logger.info("逆ジオコーディングをスキップ (--skip-geocode)")
+        for s in stations:
+            s["municipality_code"] = "13000"
+            s["municipality_name"] = "未取得"
+    else:
+        stations = batch_reverse_geocode(stations)
+    logger.info("Step 2 完了: %d 駅（東京都）", len(stations))
+
+    # 3. ローマ字スラッグ生成 + 一意性保証
+    stations = ensure_unique_slugs(stations)
+    logger.info("Step 3 完了: name_en 生成済み")
+
+    # 4. Supabase 用レコード組み立て
+    records = []
+    for s in stations:
+        records.append(
+            {
+                "name": s["name"],
+                "name_en": s["name_en"],
+                "location": f"POINT({s['lng']} {s['lat']})",
+                "municipality_code": s["municipality_code"],
+                "municipality_name": s["municipality_name"],
+                "lines": s["lines"],
+            }
+        )
+
+    # 5. DB 書き込み or プレビュー
+    if args.dry_run:
+        logger.info("[DRY RUN] %d 駅（先頭 20 件を表示）:", len(records))
+        for r in records[:20]:
+            logger.info(
+                "  %s (%s) | %s | %s | %s",
+                r["name"],
+                r["name_en"],
+                r["municipality_name"],
+                r["location"],
+                ", ".join(r["lines"]),
+            )
+        if len(records) > 20:
+            logger.info("  ... 他 %d 駅", len(records) - 20)
+    else:
+        count = upsert_records("stations", records, on_conflict="name_en")
+        logger.info("Supabase に %d 駅を登録しました", count)
+
+    logger.info("完了: %d 件処理", len(records))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--gml-path",
+        "--geojson-path",
         type=str,
-        required=True,
-        help="国土数値情報 駅データ GML ファイルのパス",
-    )
-    parser.add_argument(
-        "--boundaries-path",
-        type=str,
-        default="data/boundaries/tokyo.geojson",
-        help="行政区域ポリゴンのファイルパス",
+        default=DEFAULT_GEOJSON,
+        help="駅データ GeoJSON ファイルのパス",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="DB書き込みを行わずに処理結果を表示",
+        help="DB に書き込まない",
+    )
+    parser.add_argument(
+        "--skip-geocode",
+        action="store_true",
+        help="逆ジオコーディングをスキップ（高速プレビュー用）",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        help="処理件数制限（デバッグ用）",
     )
     parser.add_argument(
         "--verbose", "-v",
@@ -55,42 +133,7 @@ def main():
     )
     args = parser.parse_args()
 
-    # ログ設定
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    )
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
 
-    logger.info("=== 駅マスタ取得開始 ===")
-
-    # 1. GML をパース
-    stations_raw = parse_gml_stations(args.gml_path, TOKYO_PREFECTURE_CODE)
-    logger.info("パース結果: %d 駅", len(stations_raw))
-
-    # 2. 各駅に区市町村情報を付与
-    stations = []
-    for s in stations_raw:
-        code, name = find_municipality(s["lat"], s["lng"], args.boundaries_path)
-        stations.append({
-            "name": s["name"],
-            "name_en": s["name_en"],
-            "location": f"POINT({s['lng']} {s['lat']})",
-            "municipality_code": code,
-            "municipality_name": name,
-            "lines": s.get("lines", []),
-        })
-
-    # 3. Supabase に登録
-    if args.dry_run:
-        logger.info("[DRY RUN] %d 駅を表示:", len(stations))
-        for s in stations[:10]:
-            logger.info("  %s (%s)", s["name"], s["name_en"])
-    else:
-        count = upsert_records("stations", stations, on_conflict="name_en")
-        logger.info("Supabase に %d 駅を登録しました", count)
-
-    logger.info("=== 駅マスタ取得完了 ===")
-
-
-if __name__ == "__main__":
-    main()
+    main(args)
