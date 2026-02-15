@@ -16,6 +16,7 @@ import { SafetySection } from '@/components/station/SafetySection';
 import { HazardSection } from '@/components/station/HazardSection';
 import { VibeSection } from '@/components/station/VibeSection';
 import { StationMap } from '@/components/map/StationMap';
+import { UgcSection } from '@/components/ugc/UgcSection';
 
 /** SSG: 全駅のスラッグを生成 */
 export async function generateStaticParams() {
@@ -217,10 +218,10 @@ export default async function StationPage({
           <StationMap lat={lat} lng={lng} stationName={name} />
         </section>
 
-        {/* 口コミプレースホルダー */}
-        <section className="rounded-lg border bg-white p-6 text-center text-gray-400">
-          <h2 className="text-xl font-semibold text-gray-900">住民の声</h2>
-          <p className="mt-2">口コミ機能は近日公開</p>
+        {/* 住民の声（UGC） */}
+        <section className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-xl font-semibold">住民の声</h2>
+          <UgcSection stationId={stationId} />
         </section>
       </div>
     </>

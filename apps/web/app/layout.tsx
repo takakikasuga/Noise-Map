@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import './globals.css';
 
 // サイト共通メタデータ
@@ -23,14 +24,14 @@ export default function RootLayout({
         {/* ヘッダー */}
         <header className="border-b bg-white">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-            <a href="/" className="text-xl font-bold">
+            <Link href="/" className="text-xl font-bold">
               ヒッコシノイズ
-            </a>
+            </Link>
             <nav className="flex gap-4 text-sm">
-              <a href="/" className="hover:text-blue-600">トップ</a>
-              <a href="/#areas" className="hover:text-blue-600">エリア</a>
-              <a href="/compare" className="hover:text-blue-600">比較</a>
-              <a href="/about/methodology" className="hover:text-blue-600">データについて</a>
+              <Link href="/" className="hover:text-blue-600">トップ</Link>
+              <Link href="/#areas" className="hover:text-blue-600">エリア</Link>
+              <Link href="/compare" className="hover:text-blue-600">比較</Link>
+              <Link href="/about/methodology" className="hover:text-blue-600">データについて</Link>
             </nav>
           </div>
         </header>

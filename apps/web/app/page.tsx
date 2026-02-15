@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
 import { ScoreBadge } from '@hikkoshinoise/ui';
-import { getStationListForSearch, getStationListForMap, getTopStations, getBottomStations, getTopAreas, getBottomAreas, getAreaListForSearch } from '@/lib/db';
+import { getStationListForSearch, getStationListForMap, getTopStations, getBottomStations, getTopAreas, getBottomAreas, getAreaListForSearch, getRecentUgcPosts } from '@/lib/db';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { OverviewMap } from '@/components/map/OverviewMap';
 import { AreaMap } from '@/components/map/AreaMap';
@@ -10,7 +10,7 @@ const WARDS = TOKYO_MUNICIPALITIES.filter((m) => m.name.endsWith('区'));
 const TAMA = TOKYO_MUNICIPALITIES.filter((m) => !m.name.endsWith('区'));
 
 export default async function HomePage() {
-  const [stations, mapStations, topStations, bottomStations, topAreas, bottomAreas, areas] = await Promise.all([
+  const [stations, mapStations, topStations, bottomStations, topAreas, bottomAreas, areas, recentPosts] = await Promise.all([
     getStationListForSearch(),
     getStationListForMap(),
     getTopStations(5),
@@ -18,6 +18,7 @@ export default async function HomePage() {
     getTopAreas(5),
     getBottomAreas(5),
     getAreaListForSearch(),
+    getRecentUgcPosts(5),
   ]);
 
   return (
@@ -172,6 +173,56 @@ export default async function HomePage() {
           </ol>
         </div>
       </section>
+
+      {/* 最新の口コミ */}
+      {recentPosts.length > 0 && (
+        <section className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold">最新の口コミ</h2>
+          <div className="divide-y">
+            {recentPosts.map((post) => {
+              const catMap: Record<string, { label: string; color: string }> = {
+                safety: { label: '治安', color: 'bg-red-100 text-red-700' },
+                noise: { label: '騒音', color: 'bg-purple-100 text-purple-700' },
+                community: { label: 'コミュニティ', color: 'bg-blue-100 text-blue-700' },
+                vibe: { label: '雰囲気', color: 'bg-green-100 text-green-700' },
+                other: { label: 'その他', color: 'bg-gray-100 text-gray-700' },
+              };
+              const cat = catMap[post.category] ?? catMap.other;
+              const linkHref = post.stationNameEn
+                ? `/station/${post.stationNameEn}`
+                : post.areaNameEn
+                  ? `/area/${post.areaNameEn}`
+                  : null;
+              const linkLabel = post.stationName
+                ? `${post.stationName}駅`
+                : post.areaName ?? post.areaNameEn;
+
+              return (
+                <div key={post.id} className="py-4 first:pt-0 last:pb-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cat.color}`}>
+                      {cat.label}
+                    </span>
+                    {linkHref && linkLabel && (
+                      <Link href={linkHref} className="text-xs text-blue-600 hover:underline">
+                        {linkLabel}
+                      </Link>
+                    )}
+                    {post.rating != null && (
+                      <span className="text-sm">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <span key={s} className={s <= post.rating! ? 'text-yellow-400' : 'text-gray-200'}>★</span>
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 line-clamp-2">{post.content}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* 東京都全域 駅マップ */}
       <section className="rounded-lg border bg-white p-6">

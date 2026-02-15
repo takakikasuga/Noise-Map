@@ -235,6 +235,55 @@ export async function getBottomAreas(limit: number = 5) {
 }
 
 /**
+ * 最新の口コミを取得（トップページ用）
+ */
+export async function getRecentUgcPosts(limit: number = 5) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('ugc_posts')
+    .select('id, content, category, rating, created_at, station_id, area_name_en, stations(name, name_en)')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  const rows = data ?? [];
+
+  // エリア投稿の日本語名を一括取得
+  const areaSlugs = rows
+    .map((r) => r.area_name_en)
+    .filter((v): v is string => v != null);
+
+  let areaNameMap: Record<string, string> = {};
+  if (areaSlugs.length > 0) {
+    const { data: areaData } = await supabase
+      .from('town_crimes')
+      .select('name_en, area_name')
+      .in('name_en', areaSlugs)
+      .eq('year', 2025);
+    for (const a of areaData ?? []) {
+      areaNameMap[a.name_en as string] = a.area_name as string;
+    }
+  }
+
+  return rows.map((row) => {
+    const station = row.stations as unknown as { name: string; name_en: string } | null;
+    const areaEn = row.area_name_en as string | null;
+    return {
+      id: row.id as string,
+      content: row.content as string,
+      category: row.category as string,
+      rating: row.rating as number | null,
+      createdAt: row.created_at as string,
+      stationName: station?.name ?? null,
+      stationNameEn: station?.name_en ?? null,
+      areaNameEn: areaEn,
+      areaName: areaEn ? (areaNameMap[areaEn] ?? null) : null,
+    };
+  });
+}
+
+/**
  * 全エリアを取得（generateStaticParams 用）
  */
 export async function getAllAreas() {

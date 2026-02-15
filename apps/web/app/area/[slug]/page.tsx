@@ -10,6 +10,7 @@ import {
 } from '@/lib/db';
 import { SafetySection } from '@/components/station/SafetySection';
 import { StationMap } from '@/components/map/StationMap';
+import { UgcSection } from '@/components/ugc/UgcSection';
 
 /** SSG: 全エリアのスラッグを生成 */
 export async function generateStaticParams() {
@@ -181,6 +182,12 @@ export default async function AreaPage({
             <StationMap lat={lat} lng={lng} stationName={areaName} />
           </section>
         )}
+
+        {/* 住民の声（UGC） */}
+        <section className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-xl font-semibold">住民の声</h2>
+          <UgcSection areaNameEn={slug} />
+        </section>
       </div>
     </>
   );

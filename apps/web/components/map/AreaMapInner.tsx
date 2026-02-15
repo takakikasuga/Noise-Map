@@ -105,10 +105,7 @@ export default function AreaMapInner() {
     } as FeatureCollection;
   }, [allData, activeRange]);
 
-  const matchCount = useMemo(() => {
-    if (!filteredData) return 0;
-    return filteredData.features.length;
-  }, [filteredData]);
+  const matchCount = filteredData?.features.length ?? 0;
 
   const style = useCallback((feature: Feature | undefined) => {
     const score = (feature?.properties as AreaProperties | undefined)?.score ?? 50;

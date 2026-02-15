@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ScoreBadge } from '@hikkoshinoise/ui';
@@ -64,9 +64,11 @@ export function CompareContent() {
     }
   }, [searchParams]);
 
-  // 駅データ取得
+  // 駅データ取得 (rerender: ref で重複チェック → 安定した callback)
+  const fetchedRef = useRef(new Set<string>());
   const fetchStationData = useCallback(async (slug: string) => {
-    if (stationData.has(slug)) return;
+    if (fetchedRef.current.has(slug)) return;
+    fetchedRef.current.add(slug);
 
     const { data: station } = await supabase
       .from('stations')
@@ -74,7 +76,10 @@ export function CompareContent() {
       .eq('name_en', slug)
       .single();
 
-    if (!station) return;
+    if (!station) {
+      fetchedRef.current.delete(slug);
+      return;
+    }
 
     // async-parallel: safety と vibe を並列取得
     const [{ data: safety }, { data: vibe }] = await Promise.all([
@@ -116,7 +121,7 @@ export function CompareContent() {
     };
 
     setStationData((prev) => new Map(prev).set(slug, data));
-  }, [stationData]);
+  }, []);
 
   // 選択駅が変わったらデータ取得
   useEffect(() => {
