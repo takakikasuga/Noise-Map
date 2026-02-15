@@ -11,6 +11,8 @@ export interface Database {
           name: string;
           name_en: string;
           location: unknown;
+          lat: number;
+          lng: number;
           municipality_code: string;
           municipality_name: string;
           lines: string[];
