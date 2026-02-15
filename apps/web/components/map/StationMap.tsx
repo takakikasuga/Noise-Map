@@ -2,15 +2,17 @@
 
 import dynamic from 'next/dynamic';
 
-// Leaflet は SSR 非対応のため動的インポート
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
-);
+const StationMapInner = dynamic(() => import('./StationMapInner'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[400px] animate-pulse bg-gray-100 rounded-lg" />
+  ),
+});
 
 interface StationMapProps {
   lat: number;
   lng: number;
+  stationName: string;
   zoom?: number;
 }
 
@@ -18,12 +20,6 @@ interface StationMapProps {
  * 駅周辺の地図コンポーネント
  * Leaflet + OpenStreetMap を使用
  */
-export function StationMap({ lat, lng, zoom = 15 }: StationMapProps) {
-  return (
-    <div className="h-[400px] w-full rounded-lg border bg-gray-100">
-      <p className="flex h-full items-center justify-center text-gray-400">
-        地図コンポーネント（{lat}, {lng}, zoom: {zoom}）
-      </p>
-    </div>
-  );
+export function StationMap({ lat, lng, stationName, zoom = 15 }: StationMapProps) {
+  return <StationMapInner lat={lat} lng={lng} stationName={stationName} zoom={zoom} />;
 }
