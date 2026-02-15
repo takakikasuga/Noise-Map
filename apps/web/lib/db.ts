@@ -133,23 +133,23 @@ export async function getStationListForSearch() {
 export async function getTopStations(limit: number = 5) {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
-    .from('stations')
-    .select('name, name_en, safety_scores(score, rank)')
-    .eq('safety_scores.year', 2025)
-    .order('score', { referencedTable: 'safety_scores', ascending: false })
+    .from('safety_scores')
+    .select('score, rank, stations(name, name_en)')
+    .eq('year', 2025)
+    .order('score', { ascending: false })
     .limit(limit);
 
   if (error) throw error;
 
   return (data ?? [])
-    .filter((s) => s.safety_scores && (s.safety_scores as unknown[]).length > 0)
+    .filter((s) => s.stations)
     .map((s) => {
-      const scores = s.safety_scores as { score: number; rank: number | null }[];
+      const station = s.stations as unknown as { name: string; name_en: string };
       return {
-        name: s.name,
-        nameEn: s.name_en,
-        score: scores[0].score,
-        rank: scores[0].rank,
+        name: station.name,
+        nameEn: station.name_en,
+        score: s.score,
+        rank: s.rank,
       };
     });
 }
@@ -160,23 +160,23 @@ export async function getTopStations(limit: number = 5) {
 export async function getBottomStations(limit: number = 5) {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
-    .from('stations')
-    .select('name, name_en, safety_scores(score, rank)')
-    .eq('safety_scores.year', 2025)
-    .order('score', { referencedTable: 'safety_scores', ascending: true })
+    .from('safety_scores')
+    .select('score, rank, stations(name, name_en)')
+    .eq('year', 2025)
+    .order('score', { ascending: true })
     .limit(limit);
 
   if (error) throw error;
 
   return (data ?? [])
-    .filter((s) => s.safety_scores && (s.safety_scores as unknown[]).length > 0)
+    .filter((s) => s.stations)
     .map((s) => {
-      const scores = s.safety_scores as { score: number; rank: number | null }[];
+      const station = s.stations as unknown as { name: string; name_en: string };
       return {
-        name: s.name,
-        nameEn: s.name_en,
-        score: scores[0].score,
-        rank: scores[0].rank,
+        name: station.name,
+        nameEn: station.name_en,
+        score: s.score,
+        rank: s.rank,
       };
     });
 }
