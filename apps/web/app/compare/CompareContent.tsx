@@ -188,7 +188,7 @@ export function CompareContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-gray-400">読み込み中...</p>
+        <p className="text-gray-400">読み込み中…</p>
       </div>
     );
   }
@@ -239,8 +239,12 @@ export function CompareContent() {
               onFocus={() => {
                 if (searchQuery.trim()) setShowDropdown(true);
               }}
-              placeholder="駅名を入力して追加..."
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              placeholder="駅名を入力して追加…"
+              name="station-search"
+              autoComplete="off"
+              spellCheck={false}
+              aria-label="比較する駅を検索"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus-visible:border-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
             />
             {showDropdown && searchQuery.trim() !== '' && (
               <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border bg-white shadow-lg">
@@ -248,6 +252,7 @@ export function CompareContent() {
                   searchResults.map((s) => (
                     <li
                       key={s.name_en}
+                      role="option"
                       onMouseDown={() => addStation(s.name_en)}
                       className="cursor-pointer px-4 py-2 text-sm hover:bg-blue-50"
                     >

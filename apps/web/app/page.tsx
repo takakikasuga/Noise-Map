@@ -25,7 +25,7 @@ export default async function HomePage() {
     <div className="space-y-12">
       {/* ヒーローセクション */}
       <section className="text-center py-8">
-        <h1 className="text-4xl font-bold tracking-tight">
+        <h1 className="text-4xl font-bold tracking-tight text-balance">
           ヒッコシノイズ
         </h1>
         <p className="mt-4 text-lg text-gray-600">
@@ -46,7 +46,7 @@ export default async function HomePage() {
       </section>
 
       {/* エリアから探す */}
-      <section id="areas" className="rounded-lg border bg-white p-6">
+      <section id="areas" className="scroll-mt-20 rounded-lg border bg-white p-6">
         <h2 className="mb-6 text-lg font-semibold">エリアから探す</h2>
         <div className="space-y-6">
           <div>
@@ -56,7 +56,7 @@ export default async function HomePage() {
                 <Link
                   key={m.nameEn}
                   href={`/city/${m.nameEn}`}
-                  className="rounded-full border px-3 py-1.5 text-sm transition hover:bg-blue-50 hover:border-blue-300"
+                  className="rounded-full border px-3 py-1.5 text-sm transition hover:bg-blue-50 hover:border-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   {m.name}
                 </Link>
@@ -70,7 +70,7 @@ export default async function HomePage() {
                 <Link
                   key={m.nameEn}
                   href={`/city/${m.nameEn}`}
-                  className="rounded-full border px-3 py-1.5 text-sm transition hover:bg-blue-50 hover:border-blue-300"
+                  className="rounded-full border px-3 py-1.5 text-sm transition hover:bg-blue-50 hover:border-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   {m.name}
                 </Link>
@@ -89,7 +89,7 @@ export default async function HomePage() {
               <li key={station.nameEn}>
                 <Link
                   href={`/station/${station.nameEn}`}
-                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition"
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <span className="flex items-center gap-3">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-800">
@@ -111,7 +111,7 @@ export default async function HomePage() {
               <li key={station.nameEn}>
                 <Link
                   href={`/station/${station.nameEn}`}
-                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition"
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <span className="flex items-center gap-3">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-800">
@@ -136,7 +136,7 @@ export default async function HomePage() {
               <li key={area.nameEn}>
                 <Link
                   href={`/area/${area.nameEn}`}
-                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition"
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <span className="flex items-center gap-3">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-800">
@@ -158,7 +158,7 @@ export default async function HomePage() {
               <li key={area.nameEn}>
                 <Link
                   href={`/area/${area.nameEn}`}
-                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition"
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
                   <span className="flex items-center gap-3">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-800">

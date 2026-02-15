@@ -138,7 +138,7 @@ export default function AreaMapInner() {
           <button
             key={i}
             onClick={() => setActiveRange(i)}
-            className={`rounded-full px-3 py-1 text-sm transition ${
+            className={`rounded-full px-3 py-1 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               activeRange === i
                 ? 'bg-blue-600 text-white'
                 : 'border border-gray-300 text-gray-600 hover:bg-gray-50'

@@ -69,8 +69,10 @@ export function UgcForm({ stationId, areaNameEn, onPosted }: UgcFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-wrap gap-4">
         <div className="flex-1 min-w-[140px]">
-          <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリ</label>
+          <label htmlFor="ugc-category" className="block text-sm font-medium text-gray-700 mb-1">カテゴリ</label>
           <select
+            id="ugc-category"
+            name="category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -88,6 +90,7 @@ export function UgcForm({ stationId, areaNameEn, onPosted }: UgcFormProps) {
                 key={star}
                 type="button"
                 onClick={() => setRating(rating === star ? null : star)}
+                aria-label={`${star}つ星${rating === star ? '（選択解除）' : ''}`}
                 className={`text-xl transition ${
                   rating != null && star <= rating
                     ? 'text-yellow-400'
@@ -102,21 +105,23 @@ export function UgcForm({ stationId, areaNameEn, onPosted }: UgcFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">口コミ</label>
+        <label htmlFor="ugc-content" className="block text-sm font-medium text-gray-700 mb-1">口コミ</label>
         <textarea
+          id="ugc-content"
+          name="content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           rows={4}
-          placeholder="この地域の住環境について教えてください（10文字以上）..."
+          placeholder="この地域の住環境について教えてください（10文字以上）…"
         />
       </div>
 
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p role="alert" className="text-sm text-red-600">{error}</p>
       )}
       {success && (
-        <p className="text-sm text-green-600">投稿しました！</p>
+        <p aria-live="polite" className="text-sm text-green-600">投稿しました！</p>
       )}
 
       <button
@@ -124,7 +129,7 @@ export function UgcForm({ stationId, areaNameEn, onPosted }: UgcFormProps) {
         disabled={submitting}
         className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {submitting ? '投稿中...' : '投稿する'}
+        {submitting ? '投稿中…' : '投稿する'}
       </button>
     </form>
   );

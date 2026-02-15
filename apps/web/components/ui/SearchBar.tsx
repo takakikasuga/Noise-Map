@@ -120,11 +120,18 @@ export function SearchBar({ stations, areas = [], cities = [] }: SearchBarProps)
         onChange={handleChange}
         onBlur={handleBlur}
         onFocus={handleFocus}
-        placeholder="駅名・エリア名を入力して検索..."
-        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+        placeholder="駅名・エリア名を入力して検索…"
+        name="search"
+        autoComplete="off"
+        spellCheck={false}
+        aria-label="駅名・エリア名を検索"
+        role="combobox"
+        aria-expanded={showDropdown && query.trim() !== ''}
+        aria-controls="search-listbox"
+        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg shadow-sm focus-visible:border-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
       />
       {showDropdown && query.trim() !== '' && (
-        <ul className="absolute z-10 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        <ul id="search-listbox" role="listbox" className="absolute z-10 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
           {filtered.length > 0 ? (
             <>
               {cityResults.length > 0 && (
@@ -135,6 +142,7 @@ export function SearchBar({ stations, areas = [], cities = [] }: SearchBarProps)
                   {cityResults.map((r) => (
                     <li
                       key={`city-${r.nameEn}`}
+                      role="option"
                       onMouseDown={() => handleSelect(r)}
                       className="cursor-pointer px-4 py-2 hover:bg-blue-50"
                     >
@@ -151,6 +159,7 @@ export function SearchBar({ stations, areas = [], cities = [] }: SearchBarProps)
                   {stationResults.map((r) => (
                     <li
                       key={`station-${r.nameEn}`}
+                      role="option"
                       onMouseDown={() => handleSelect(r)}
                       className="cursor-pointer px-4 py-2 hover:bg-blue-50"
                     >
@@ -167,6 +176,7 @@ export function SearchBar({ stations, areas = [], cities = [] }: SearchBarProps)
                   {areaResults.map((r) => (
                     <li
                       key={`area-${r.nameEn}`}
+                      role="option"
                       onMouseDown={() => handleSelect(r)}
                       className="cursor-pointer px-4 py-2 hover:bg-blue-50"
                     >

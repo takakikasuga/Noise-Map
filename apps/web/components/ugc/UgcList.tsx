@@ -106,7 +106,7 @@ export function UgcList({ stationId, areaNameEn, refreshKey }: UgcListProps) {
                 {post.rating != null && <Stars rating={post.rating} />}
                 <span className="ml-auto text-xs text-gray-400">{relativeTime(post.created_at)}</span>
               </div>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{post.content}</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{post.content}</p>
             </div>
           );
         })}

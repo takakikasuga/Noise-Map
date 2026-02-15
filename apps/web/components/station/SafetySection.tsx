@@ -74,7 +74,7 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
           <button
             key={d.year}
             onClick={() => setSelectedYear(d.year)}
-            className={`rounded-md px-3 py-1 text-sm font-medium transition ${
+            className={`rounded-md px-3 py-1 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               d.year === selectedYear
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -106,7 +106,7 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
         />
       </div>
 
-      <table className="w-full text-sm">
+      <table className="w-full text-sm tabular-nums">
         <thead>
           <tr className="border-b text-left">
             <th className="py-2">種別</th>
@@ -117,9 +117,9 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
           {crimeRows.map((row) => (
             <tr key={row.label} className="border-b">
               <td className="py-2">
-                <span className="group relative cursor-help border-b border-dashed border-gray-400">
+                <span tabIndex={0} className="group relative cursor-help border-b border-dashed border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:rounded">
                   {row.label}
-                  <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 hidden w-max max-w-[220px] rounded bg-gray-800 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block">
+                  <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 hidden w-max max-w-[220px] rounded bg-gray-800 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block group-focus-within:block">
                     {row.tip}
                   </span>
                 </span>

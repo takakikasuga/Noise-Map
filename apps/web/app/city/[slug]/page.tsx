@@ -163,7 +163,7 @@ export default async function CityPage({
             <h2 className="mb-4 text-lg font-semibold">
               犯罪統計（{latestStats.year}年）
             </h2>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 tabular-nums">
               <div>
                 <p className="text-sm text-gray-500">犯罪件数合計</p>
                 <p className="text-2xl font-bold">
