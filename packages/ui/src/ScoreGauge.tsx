@@ -4,14 +4,17 @@ interface ScoreGaugeProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+function scoreToHue(score: number): number {
+  const clamped = Math.max(0, Math.min(55, score));
+  return (clamped / 55) * 120;
+}
+
 /** 偏差値ゲージコンポーネント（円形プログレス） */
 export function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProps) {
-  // スコアに応じた色変化
-  const getColor = (s: number): string => {
-    if (s <= 30) return 'text-red-500';
-    if (s <= 60) return 'text-yellow-500';
-    return 'text-green-500';
-  };
+  const hue = scoreToHue(score);
+  const bg = `hsl(${hue}, 70%, 93%)`;
+  const border = `hsl(${hue}, 70%, 45%)`;
+  const text = `hsl(${hue}, 70%, 28%)`;
 
   const sizeStyles = {
     sm: 'w-16 h-16 text-lg',
@@ -21,10 +24,29 @@ export function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProps) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className={`flex items-center justify-center rounded-full border-4 font-bold ${sizeStyles[size]} ${getColor(score)}`}>
+      <div
+        className={`flex items-center justify-center rounded-full border-4 font-bold ${sizeStyles[size]}`}
+        style={{ backgroundColor: bg, borderColor: border, color: text }}
+      >
         {score}
       </div>
       <span className="text-sm text-gray-600">{label}</span>
     </div>
+  );
+}
+
+/** 偏差値バッジ（インライン用） */
+export function ScoreBadge({ score }: { score: number }) {
+  const hue = scoreToHue(score);
+  const bg = `hsl(${hue}, 70%, 93%)`;
+  const text = `hsl(${hue}, 70%, 28%)`;
+
+  return (
+    <span
+      className="inline-block rounded-full px-2.5 py-0.5 text-sm font-semibold"
+      style={{ backgroundColor: bg, color: text }}
+    >
+      {score.toFixed(1)}
+    </span>
   );
 }

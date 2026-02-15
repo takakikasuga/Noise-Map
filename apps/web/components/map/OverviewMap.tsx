@@ -14,6 +14,7 @@ interface StationPoint {
   nameEn: string;
   lat: number;
   lng: number;
+  score: number | null;
 }
 
 interface OverviewMapProps {

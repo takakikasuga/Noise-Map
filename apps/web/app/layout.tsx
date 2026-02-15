@@ -30,6 +30,7 @@ export default function RootLayout({
               <a href="/" className="hover:text-blue-600">トップ</a>
               <a href="/#areas" className="hover:text-blue-600">エリア</a>
               <a href="/compare" className="hover:text-blue-600">比較</a>
+              <a href="/about/methodology" className="hover:text-blue-600">データについて</a>
             </nav>
           </div>
         </header>

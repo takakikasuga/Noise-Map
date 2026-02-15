@@ -106,11 +106,18 @@ export async function getStationListForMap() {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from('stations')
-    .select('name, name_en, lat, lng')
+    .select('name, name_en, lat, lng, safety_scores(score)')
+    .eq('safety_scores.year', 2025)
     .order('name');
 
   if (error) throw error;
-  return snakeToCamelArray(data ?? []);
+  return (data ?? []).map((row) => ({
+    name: row.name,
+    nameEn: row.name_en,
+    lat: row.lat,
+    lng: row.lng,
+    score: (row.safety_scores as unknown as { score: number }[])?.[0]?.score ?? null,
+  }));
 }
 
 /**
@@ -179,6 +186,52 @@ export async function getBottomStations(limit: number = 5) {
         rank: s.rank,
       };
     });
+}
+
+/**
+ * 治安スコア上位のエリアを取得（2025年）
+ */
+export async function getTopAreas(limit: number = 5) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('town_crimes')
+    .select('area_name, name_en, score')
+    .eq('year', 2025)
+    .not('score', 'is', null)
+    .not('name_en', 'is', null)
+    .order('score', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    areaName: row.area_name,
+    nameEn: row.name_en,
+    score: row.score,
+  }));
+}
+
+/**
+ * 治安スコア下位のエリアを取得（2025年）
+ */
+export async function getBottomAreas(limit: number = 5) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('town_crimes')
+    .select('area_name, name_en, score')
+    .eq('year', 2025)
+    .not('score', 'is', null)
+    .not('name_en', 'is', null)
+    .order('score', { ascending: true })
+    .limit(limit);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    areaName: row.area_name,
+    nameEn: row.name_en,
+    score: row.score,
+  }));
 }
 
 /**

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { ScoreBadge } from '@hikkoshinoise/ui';
 
 interface Area {
   areaName: string;
@@ -12,12 +13,6 @@ interface Area {
 }
 
 const INITIAL_COUNT = 20;
-
-function scoreColor(score: number) {
-  if (score >= 55) return 'text-green-600';
-  if (score >= 45) return 'text-gray-600';
-  return 'text-red-600';
-}
 
 export function AreaList({ areas }: { areas: Area[] }) {
   const [showAll, setShowAll] = useState(false);
@@ -43,9 +38,7 @@ export function AreaList({ areas }: { areas: Area[] }) {
               <span className="text-xs text-gray-400">
                 {area.totalCrimes.toLocaleString()}件
               </span>
-              <span className={`text-sm font-semibold ${scoreColor(area.score)}`}>
-                {area.score.toFixed(1)}
-              </span>
+              <ScoreBadge score={area.score} />
             </span>
           </Link>
         ))}

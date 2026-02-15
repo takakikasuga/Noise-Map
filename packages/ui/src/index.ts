@@ -1,4 +1,4 @@
 export { Button } from './Button';
 export { Card } from './Card';
 export { Badge } from './Badge';
-export { ScoreGauge } from './ScoreGauge';
+export { ScoreGauge, ScoreBadge } from './ScoreGauge';

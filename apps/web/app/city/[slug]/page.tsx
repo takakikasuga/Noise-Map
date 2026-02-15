@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
+import { ScoreBadge } from '@hikkoshinoise/ui';
 import {
   getStationsByMunicipality,
   getAreasByMunicipality,
@@ -251,9 +252,7 @@ export default async function CityPage({
                           {area.areaName}
                         </span>
                       </span>
-                      <span className="text-sm font-semibold text-green-600">
-                        {(area.score).toFixed(1)}
-                      </span>
+                      <ScoreBadge score={area.score} />
                     </Link>
                   </li>
                 ))}
@@ -280,9 +279,7 @@ export default async function CityPage({
                           {area.areaName}
                         </span>
                       </span>
-                      <span className="text-sm font-semibold text-red-600">
-                        {(area.score).toFixed(1)}
-                      </span>
+                      <ScoreBadge score={area.score} />
                     </Link>
                   </li>
                 ))}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ScoreBadge } from '@hikkoshinoise/ui';
 import { supabase } from '@/lib/supabase';
 import { MAX_COMPARE_STATIONS } from '@/lib/constants';
 
@@ -297,7 +298,9 @@ export function CompareContent() {
                 <td className="px-4 py-3 font-medium text-green-800">治安偏差値</td>
                 {selectedSlugs.map((slug) => (
                   <td key={slug} className="px-4 py-3 text-center font-bold text-lg">
-                    {stationData.get(slug)?.safety?.score.toFixed(1) ?? '-'}
+                    {stationData.get(slug)?.safety?.score != null
+                      ? <ScoreBadge score={stationData.get(slug)!.safety!.score} />
+                      : '-'}
                   </td>
                 ))}
               </tr>

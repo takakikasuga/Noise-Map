@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
-import { getStationListForSearch, getStationListForMap, getTopStations, getBottomStations, getAreaListForSearch } from '@/lib/db';
+import { ScoreBadge } from '@hikkoshinoise/ui';
+import { getStationListForSearch, getStationListForMap, getTopStations, getBottomStations, getTopAreas, getBottomAreas, getAreaListForSearch } from '@/lib/db';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { OverviewMap } from '@/components/map/OverviewMap';
 import { AreaMap } from '@/components/map/AreaMap';
@@ -9,11 +10,13 @@ const WARDS = TOKYO_MUNICIPALITIES.filter((m) => m.name.endsWith('区'));
 const TAMA = TOKYO_MUNICIPALITIES.filter((m) => !m.name.endsWith('区'));
 
 export default async function HomePage() {
-  const [stations, mapStations, topStations, bottomStations, areas] = await Promise.all([
+  const [stations, mapStations, topStations, bottomStations, topAreas, bottomAreas, areas] = await Promise.all([
     getStationListForSearch(),
     getStationListForMap(),
     getTopStations(5),
     getBottomStations(5),
+    getTopAreas(5),
+    getBottomAreas(5),
     getAreaListForSearch(),
   ]);
 
@@ -76,9 +79,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ランキングセクション */}
+      {/* 駅ランキング */}
       <section className="grid gap-8 md:grid-cols-2">
-        {/* 安全な駅 TOP 5 */}
         <div className="rounded-lg border bg-white p-6">
           <h2 className="mb-4 text-lg font-semibold text-green-700">安全な駅 TOP 5</h2>
           <ol className="space-y-3">
@@ -94,14 +96,13 @@ export default async function HomePage() {
                     </span>
                     <span className="font-medium">{station.name}駅</span>
                   </span>
-                  <span className="text-sm text-green-600 font-semibold">{station.score.toFixed(1)}</span>
+                  <ScoreBadge score={station.score} />
                 </Link>
               </li>
             ))}
           </ol>
         </div>
 
-        {/* 注意が必要な駅 TOP 5 */}
         <div className="rounded-lg border bg-white p-6">
           <h2 className="mb-4 text-lg font-semibold text-red-700">注意が必要な駅 TOP 5</h2>
           <ol className="space-y-3">
@@ -117,7 +118,54 @@ export default async function HomePage() {
                     </span>
                     <span className="font-medium">{station.name}駅</span>
                   </span>
-                  <span className="text-sm text-red-600 font-semibold">{station.score.toFixed(1)}</span>
+                  <ScoreBadge score={station.score} />
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* エリアランキング */}
+      <section className="grid gap-8 md:grid-cols-2">
+        <div className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-green-700">安全なエリア TOP 5</h2>
+          <ol className="space-y-3">
+            {topAreas.map((area, i) => (
+              <li key={area.nameEn}>
+                <Link
+                  href={`/area/${area.nameEn}`}
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-800">
+                      {i + 1}
+                    </span>
+                    <span className="font-medium">{area.areaName}</span>
+                  </span>
+                  <ScoreBadge score={area.score} />
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-red-700">注意が必要なエリア TOP 5</h2>
+          <ol className="space-y-3">
+            {bottomAreas.map((area, i) => (
+              <li key={area.nameEn}>
+                <Link
+                  href={`/area/${area.nameEn}`}
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-800">
+                      {i + 1}
+                    </span>
+                    <span className="font-medium">{area.areaName}</span>
+                  </span>
+                  <ScoreBadge score={area.score} />
                 </Link>
               </li>
             ))}
@@ -129,7 +177,7 @@ export default async function HomePage() {
       <section className="rounded-lg border bg-white p-6">
         <h2 className="mb-4 text-lg font-semibold">東京都 駅マップ</h2>
         <p className="mb-4 text-sm text-gray-500">駅をクリックすると詳細ページに移動できます</p>
-        <OverviewMap stations={mapStations as { name: string; nameEn: string; lat: number; lng: number }[]} />
+        <OverviewMap stations={mapStations as { name: string; nameEn: string; lat: number; lng: number; score: number | null }[]} />
       </section>
 
       {/* 東京都全域 エリアマップ */}

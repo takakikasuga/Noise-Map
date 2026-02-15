@@ -42,11 +42,11 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
   if (!selected) return null;
 
   const crimeRows = [
-    { label: '凶悪犯', count: selected.crimesViolent },
-    { label: '粗暴犯', count: selected.crimesAssault },
-    { label: '窃盗犯', count: selected.crimesTheft },
-    { label: '知能犯', count: selected.crimesIntellectual },
-    { label: 'その他', count: selected.crimesOther },
+    { label: '凶悪犯', count: selected.crimesViolent, tip: '殺人・強盗・放火・強制性交等（警察庁 包括罪種）' },
+    { label: '粗暴犯', count: selected.crimesAssault, tip: '凶器準備集合・暴行・傷害・脅迫・恐喝（警察庁 包括罪種）' },
+    { label: '窃盗犯', count: selected.crimesTheft, tip: '空き巣・ひったくり・万引き・自転車盗・車上ねらい等（警察庁 包括罪種）' },
+    { label: '知能犯', count: selected.crimesIntellectual, tip: '詐欺・横領・偽造・汚職・背任等（警察庁 包括罪種）' },
+    { label: 'その他', count: selected.crimesOther, tip: '風俗犯（賭博・わいせつ）＋その他の刑法犯（器物損壊等）（警察庁 包括罪種）' },
   ];
 
   const delta =
@@ -116,7 +116,14 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
         <tbody>
           {crimeRows.map((row) => (
             <tr key={row.label} className="border-b">
-              <td className="py-2">{row.label}</td>
+              <td className="py-2">
+                <span className="group relative cursor-help border-b border-dashed border-gray-400">
+                  {row.label}
+                  <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 hidden w-max max-w-[220px] rounded bg-gray-800 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block">
+                    {row.tip}
+                  </span>
+                </span>
+              </td>
               <td className="py-2 text-right">{row.count}件</td>
             </tr>
           ))}
