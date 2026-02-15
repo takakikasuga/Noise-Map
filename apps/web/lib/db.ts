@@ -21,6 +21,36 @@ function snakeToCamelArray<T extends Record<string, unknown>>(
 }
 
 /**
+ * DB 内の最新年を取得（ビルド時に1回だけ実行、React cache で重複排除）
+ */
+export const getLatestYear = cache(async function getLatestYear(): Promise<number> {
+  const supabase = createSupabaseClient();
+  const { data } = await supabase
+    .from('safety_scores')
+    .select('year')
+    .order('year', { ascending: false })
+    .limit(1)
+    .single();
+  return data?.year ?? 2025;
+});
+
+/**
+ * DB 内の年度範囲を取得（方法論ページ等で使用）
+ */
+export const getYearRange = cache(async function getYearRange() {
+  const supabase = createSupabaseClient();
+  const { data } = await supabase
+    .from('safety_scores')
+    .select('year')
+    .order('year', { ascending: true })
+    .limit(1)
+    .single();
+  const minYear = data?.year ?? 2017;
+  const maxYear = await getLatestYear();
+  return { minYear, maxYear, count: maxYear - minYear + 1 };
+});
+
+/**
  * 全駅を取得（generateStaticParams 用）
  */
 export async function getAllStations() {
@@ -104,10 +134,11 @@ export async function getStationHazard(stationId: string) {
  */
 export async function getStationListForMap() {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('stations')
     .select('name, name_en, lat, lng, safety_scores(score)')
-    .eq('safety_scores.year', 2025)
+    .eq('safety_scores.year', year)
     .order('name');
 
   if (error) throw error;
@@ -135,14 +166,15 @@ export async function getStationListForSearch() {
 }
 
 /**
- * 治安スコア上位の駅を取得（2025年）
+ * 治安スコア上位の駅を取得（最新年）
  */
 export async function getTopStations(limit: number = 5) {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('safety_scores')
     .select('score, rank, stations(name, name_en)')
-    .eq('year', 2025)
+    .eq('year', year)
     .order('score', { ascending: false })
     .limit(limit);
 
@@ -162,14 +194,15 @@ export async function getTopStations(limit: number = 5) {
 }
 
 /**
- * 治安スコア下位の駅を取得（2025年）
+ * 治安スコア下位の駅を取得（最新年）
  */
 export async function getBottomStations(limit: number = 5) {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('safety_scores')
     .select('score, rank, stations(name, name_en)')
-    .eq('year', 2025)
+    .eq('year', year)
     .order('score', { ascending: true })
     .limit(limit);
 
@@ -189,14 +222,15 @@ export async function getBottomStations(limit: number = 5) {
 }
 
 /**
- * 治安スコア上位のエリアを取得（2025年）
+ * 治安スコア上位のエリアを取得（最新年）
  */
 export async function getTopAreas(limit: number = 5) {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('town_crimes')
     .select('area_name, name_en, score')
-    .eq('year', 2025)
+    .eq('year', year)
     .not('score', 'is', null)
     .not('name_en', 'is', null)
     .order('score', { ascending: false })
@@ -212,14 +246,15 @@ export async function getTopAreas(limit: number = 5) {
 }
 
 /**
- * 治安スコア下位のエリアを取得（2025年）
+ * 治安スコア下位のエリアを取得（最新年）
  */
 export async function getBottomAreas(limit: number = 5) {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('town_crimes')
     .select('area_name, name_en, score')
-    .eq('year', 2025)
+    .eq('year', year)
     .not('score', 'is', null)
     .not('name_en', 'is', null)
     .order('score', { ascending: true })
@@ -260,7 +295,7 @@ export async function getRecentUgcPosts(limit: number = 5) {
       .from('town_crimes')
       .select('name_en, area_name')
       .in('name_en', areaSlugs)
-      .eq('year', 2025);
+      .eq('year', await getLatestYear());
     for (const a of areaData ?? []) {
       areaNameMap[a.name_en as string] = a.area_name as string;
     }
@@ -285,10 +320,11 @@ export async function getRecentUgcPosts(limit: number = 5) {
  */
 export async function getAllAreas() {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('town_crimes')
     .select('name_en')
-    .eq('year', 2025)
+    .eq('year', year)
     .not('name_en', 'is', null)
     .order('name_en');
 
@@ -309,11 +345,12 @@ export async function getAllAreas() {
  */
 export const getAreaBySlug = cache(async function getAreaBySlug(slug: string) {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('town_crimes')
     .select('*')
     .eq('name_en', slug)
-    .eq('year', 2025)
+    .eq('year', year)
     .single();
 
   if (error && error.code !== 'PGRST116') throw error;
@@ -351,10 +388,11 @@ export async function getAreaSafety(nameEn: string) {
  */
 export async function getAreaListForSearch() {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('town_crimes')
     .select('area_name, name_en')
-    .eq('year', 2025)
+    .eq('year', year)
     .not('name_en', 'is', null)
     .order('area_name');
 
@@ -385,7 +423,7 @@ export async function getStationsByMunicipality(municipalityName: string) {
     .from('safety_scores')
     .select('station_id, score, rank')
     .in('station_id', stationIds)
-    .eq('year', 2025);
+    .eq('year', await getLatestYear());
 
   if (scoresError) throw scoresError;
 
@@ -406,11 +444,12 @@ export async function getStationsByMunicipality(municipalityName: string) {
  */
 export async function getAreasByMunicipality(municipalityName: string) {
   const supabase = createSupabaseClient();
+  const year = await getLatestYear();
   const { data, error } = await supabase
     .from('town_crimes')
     .select('area_name, name_en, score, rank, total_crimes')
     .eq('municipality_name', municipalityName)
-    .eq('year', 2025)
+    .eq('year', year)
     .not('name_en', 'is', null)
     .order('score', { ascending: false });
 

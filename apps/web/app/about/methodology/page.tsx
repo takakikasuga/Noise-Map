@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getYearRange } from '@/lib/db';
 
 export const metadata: Metadata = {
   title: 'データについて',
@@ -20,7 +21,8 @@ function ExtLink({ href, children }: { href: string; children: React.ReactNode }
   );
 }
 
-export default function MethodologyPage() {
+export default async function MethodologyPage() {
+  const yearRange = await getYearRange();
   return (
     <div className="space-y-10">
       <section className="text-center py-6">
@@ -257,7 +259,7 @@ export default function MethodologyPage() {
           </li>
           <li className="flex gap-2">
             <span className="text-green-600 font-bold">&#10003;</span>
-            対応年度: 2017年（平成29年）〜2025年（令和7年）の9年分
+            対応年度: {yearRange.minYear}年〜{yearRange.maxYear}年（{yearRange.count}年分）
           </li>
           <li className="flex gap-2">
             <span className="text-amber-500 font-bold">&#9888;</span>
