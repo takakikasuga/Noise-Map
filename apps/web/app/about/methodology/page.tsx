@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'データについて',
   description:
-    'ヒッコシノイズで使用しているデータソース、偏差値の算出方法、犯罪種別の定義、カバレッジについて説明します。',
+    'ヒッコシマップで使用しているデータソース、偏差値の算出方法、犯罪種別の定義、カバレッジについて説明します。',
 };
 
 function ExtLink({ href, children }: { href: string; children: React.ReactNode }) {
@@ -26,7 +26,7 @@ export default function MethodologyPage() {
       <section className="text-center py-6">
         <h1 className="text-3xl font-bold tracking-tight">データについて</h1>
         <p className="mt-3 text-gray-600">
-          ヒッコシノイズで使用しているデータの出典・算出方法・定義をまとめています。
+          ヒッコシマップで使用しているデータの出典・算出方法・定義をまとめています。
         </p>
       </section>
 

@@ -1,4 +1,4 @@
--- ヒッコシノイズ 初期スキーマ
+-- ヒッコシマップ 初期スキーマ
 -- Supabase Dashboard の SQL Editor で実行する
 
 -- PostGIS 拡張を有効化

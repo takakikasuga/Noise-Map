@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import type { SafetyScore } from '@hikkoshinoise/shared';
-import type { VibeData } from '@hikkoshinoise/shared';
-import type { HazardData } from '@hikkoshinoise/shared';
-import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
-import { ScoreBadge } from '@hikkoshinoise/ui';
+import type { SafetyScore } from '@hikkoshimap/shared';
+import type { VibeData } from '@hikkoshimap/shared';
+import type { HazardData } from '@hikkoshimap/shared';
+import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
+import { ScoreBadge } from '@hikkoshimap/ui';
 import {
   getAllStations,
   getStationBySlug,
@@ -129,9 +129,9 @@ export default async function StationPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://hikkoshinoise.com' },
+      { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://hikkoshimap.com' },
       ...(citySlug
-        ? [{ '@type': 'ListItem', position: 2, name: municipalityName, item: `https://hikkoshinoise.com/city/${citySlug}` }]
+        ? [{ '@type': 'ListItem', position: 2, name: municipalityName, item: `https://hikkoshimap.com/city/${citySlug}` }]
         : []),
       { '@type': 'ListItem', position: citySlug ? 3 : 2, name: `${name}駅` },
     ],

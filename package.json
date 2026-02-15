@@ -1,5 +1,5 @@
 {
-  "name": "hikkoshinoise",
+  "name": "hikkoshimap",
   "private": true,
   "scripts": {
     "build": "turbo run build",

@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { createSupabaseClient } from '@hikkoshinoise/supabase';
+import { createSupabaseClient } from '@hikkoshimap/supabase';
 
 /** snake_case キーを camelCase に変換 */
 function snakeToCamel<T extends Record<string, unknown>>(

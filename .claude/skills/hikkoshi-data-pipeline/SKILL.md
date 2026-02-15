@@ -1,9 +1,9 @@
 ---
 name: hikkoshi-data-pipeline
-description: "ヒッコシノイズのデータパイプライン実装パターン。pipeline/ 配下のPythonスクリプトの作成・修正時に使用。データソースAPI呼び出し、CSVパース、スコア正規化、Supabase投入のベストプラクティスを含む。"
+description: "ヒッコシマップのデータパイプライン実装パターン。pipeline/ 配下のPythonスクリプトの作成・修正時に使用。データソースAPI呼び出し、CSVパース、スコア正規化、Supabase投入のベストプラクティスを含む。"
 ---
 
-# ヒッコシノイズ データパイプラインスキル
+# ヒッコシマップ データパイプラインスキル
 
 pipeline/ ディレクトリのPythonスクリプトを作成・修正する際のガイドライン。
 

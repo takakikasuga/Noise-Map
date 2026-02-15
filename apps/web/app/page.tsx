@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
-import { ScoreBadge } from '@hikkoshinoise/ui';
+import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
+import { ScoreBadge } from '@hikkoshimap/ui';
 import { getStationListForSearch, getStationListForMap, getTopAreas, getBottomAreas, getAreaListForSearch, getRecentUgcPosts } from '@/lib/db';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { OverviewMap } from '@/components/map/OverviewMap';
@@ -24,7 +24,7 @@ export default async function HomePage() {
       {/* ヒーローセクション */}
       <section className="text-center py-8">
         <h1 className="text-4xl font-bold tracking-tight text-balance">
-          ヒッコシノイズ
+          ヒッコシマップ
         </h1>
         <p className="mt-4 text-lg text-gray-600">
           東京都の住環境リスクを、忖度なく可視化する。

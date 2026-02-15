@@ -1,4 +1,4 @@
-# ヒッコシノイズ（HikkoshiNoise）
+# ヒッコシマップ（HikkoshiMap）
 
 ## プロジェクト概要
 
@@ -36,7 +36,7 @@
 ## リポジトリ構成
 
 ```
-hikkoshinoise/
+hikkoshimap/
 ├── apps/web/         # Next.js フロントエンド
 ├── packages/
 │   ├── shared/       # 共有型定義・定数

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createSupabaseClient } from '@hikkoshinoise/supabase';
+import { createSupabaseClient } from '@hikkoshimap/supabase';
 
 type AreaRow = { area_name: string; name_en: string; score: number; geojson: string };
 

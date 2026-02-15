@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ScoreBadge } from '@hikkoshinoise/ui';
+import { ScoreBadge } from '@hikkoshimap/ui';
 import { supabase } from '@/lib/supabase';
 import { MAX_COMPARE_STATIONS } from '@/lib/constants';
 

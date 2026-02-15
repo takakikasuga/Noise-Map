@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import type { AreaSafety } from '@hikkoshinoise/shared';
-import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
-import { ScoreBadge } from '@hikkoshinoise/ui';
+import type { AreaSafety } from '@hikkoshimap/shared';
+import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
+import { ScoreBadge } from '@hikkoshimap/ui';
 import {
   getAllAreas,
   getAreaBySlug,
@@ -128,9 +128,9 @@ export default async function AreaPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://hikkoshinoise.com' },
+      { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://hikkoshimap.com' },
       ...(citySlug
-        ? [{ '@type': 'ListItem', position: 2, name: municipalityName, item: `https://hikkoshinoise.com/city/${citySlug}` }]
+        ? [{ '@type': 'ListItem', position: 2, name: municipalityName, item: `https://hikkoshimap.com/city/${citySlug}` }]
         : []),
       { '@type': 'ListItem', position: citySlug ? 3 : 2, name: areaName },
     ],

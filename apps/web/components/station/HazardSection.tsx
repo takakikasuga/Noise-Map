@@ -1,5 +1,5 @@
-import type { HazardData } from '@hikkoshinoise/shared';
-import { ScoreGauge } from '@hikkoshinoise/ui';
+import type { HazardData } from '@hikkoshimap/shared';
+import { ScoreGauge } from '@hikkoshimap/ui';
 
 interface HazardSectionProps {
   data: HazardData | null;

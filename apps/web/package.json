@@ -1,5 +1,5 @@
 {
-  "name": "@hikkoshinoise/web",
+  "name": "@hikkoshimap/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,9 +10,9 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@hikkoshinoise/shared": "workspace:*",
-    "@hikkoshinoise/supabase": "workspace:*",
-    "@hikkoshinoise/ui": "workspace:*",
+    "@hikkoshimap/shared": "workspace:*",
+    "@hikkoshimap/supabase": "workspace:*",
+    "@hikkoshimap/ui": "workspace:*",
     "@supabase/ssr": "^0.5",
     "@supabase/supabase-js": "^2",
     "leaflet": "^1.9.4",

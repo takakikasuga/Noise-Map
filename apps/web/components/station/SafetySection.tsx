@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { ScoreGauge } from '@hikkoshinoise/ui';
+import { ScoreGauge } from '@hikkoshimap/ui';
 
 const CrimeTrendChart = dynamic(
   () => import('@/components/chart/CrimeTrendChart').then(m => m.CrimeTrendChart),

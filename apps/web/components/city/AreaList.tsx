@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ScoreBadge } from '@hikkoshinoise/ui';
+import { ScoreBadge } from '@hikkoshimap/ui';
 
 interface Area {
   areaName: string;

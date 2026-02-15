@@ -4,10 +4,10 @@ import './globals.css';
 
 // サイト共通メタデータ
 export const metadata: Metadata = {
-  metadataBase: new URL('https://hikkoshinoise.com'),
+  metadataBase: new URL('https://hikkoshimap.com'),
   title: {
-    default: 'ヒッコシノイズ',
-    template: '%s | ヒッコシノイズ',
+    default: 'ヒッコシマップ',
+    template: '%s | ヒッコシマップ',
   },
   description: '東京都全域の住環境リスク情報を駅単位で可視化。治安・災害・街の雰囲気を客観データで忖度なく提供。',
   keywords: ['引っ越し', '東京', '治安', '災害リスク', '住環境', '駅'],
@@ -31,7 +31,7 @@ export default function RootLayout({
         <header className="border-b bg-white">
           <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
             <Link href="/" className="text-xl font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:rounded">
-              ヒッコシノイズ
+              ヒッコシマップ
             </Link>
             <nav className="flex gap-4 text-sm">
               <Link href="/" className="hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:rounded">トップ</Link>

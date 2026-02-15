@@ -1,9 +1,9 @@
 ---
 name: hikkoshi-seo
-description: "ヒッコシノイズのSEO最適化パターン。駅ページの構造化データ、メタデータ、OGP、内部リンク設計、URL設計の実装時に使用。約800ページのロングテールSEOを最大化するためのガイドライン。"
+description: "ヒッコシマップのSEO最適化パターン。駅ページの構造化データ、メタデータ、OGP、内部リンク設計、URL設計の実装時に使用。約800ページのロングテールSEOを最大化するためのガイドライン。"
 ---
 
-# ヒッコシノイズ SEOスキル
+# ヒッコシマップ SEOスキル
 
 約800駅ページのロングテールSEOを最大化するためのガイドライン。
 
@@ -42,16 +42,16 @@ description: "ヒッコシノイズのSEO最適化パターン。駅ページの
 
 ```typescript
 export const metadata: Metadata = {
-  metadataBase: new URL('https://hikkoshinoise.com'),
+  metadataBase: new URL('https://hikkoshimap.com'),
   title: {
-    template: '%s | ヒッコシノイズ',
-    default: 'ヒッコシノイズ — 東京の住環境リスクマップ',
+    template: '%s | ヒッコシマップ',
+    default: 'ヒッコシマップ — 東京の住環境リスクマップ',
   },
   description: '東京都約800駅の治安・災害リスク・街の雰囲気を客観データで可視化。引越し前に知りたかった情報を忖度なく提供。',
   openGraph: {
     type: 'website',
     locale: 'ja_JP',
-    siteName: 'ヒッコシノイズ',
+    siteName: 'ヒッコシマップ',
   },
 };
 ```
@@ -109,7 +109,7 @@ const jsonLd = {
     },
     author: {
       '@type': 'Organization',
-      name: 'ヒッコシノイズ',
+      name: 'ヒッコシマップ',
     },
     reviewBody: `${station.name}駅の住環境スコア: 治安${station.safetyScore}点、災害${station.hazardScore}点`,
   },
@@ -125,9 +125,9 @@ const breadcrumbJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://hikkoshinoise.com' },
-    { '@type': 'ListItem', position: 2, name: `${station.municipalityName}`, item: `https://hikkoshinoise.com/area/${station.municipalityCode}` },
-    { '@type': 'ListItem', position: 3, name: `${station.name}駅`, item: `https://hikkoshinoise.com/station/${station.nameEn}` },
+    { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://hikkoshimap.com' },
+    { '@type': 'ListItem', position: 2, name: `${station.municipalityName}`, item: `https://hikkoshimap.com/area/${station.municipalityCode}` },
+    { '@type': 'ListItem', position: 3, name: `${station.name}駅`, item: `https://hikkoshimap.com/station/${station.nameEn}` },
   ],
 };
 ```
@@ -153,14 +153,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const stations = await getAllStations();
 
   const stationPages = stations.map((s) => ({
-    url: `https://hikkoshinoise.com/station/${s.nameEn}`,
+    url: `https://hikkoshimap.com/station/${s.nameEn}`,
     lastModified: s.updatedAt,
     changeFrequency: 'monthly' as const,
     priority: 0.8,
   }));
 
   return [
-    { url: 'https://hikkoshinoise.com', lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
+    { url: 'https://hikkoshimap.com', lastModified: new Date(), changeFrequency: 'weekly', priority: 1.0 },
     ...stationPages,
   ];
 }
@@ -185,7 +185,7 @@ export async function generateStaticParams() {
 ```
 User-agent: *
 Allow: /
-Sitemap: https://hikkoshinoise.com/sitemap.xml
+Sitemap: https://hikkoshimap.com/sitemap.xml
 
 # 比較ページはクエリパラメータが無限に組み合わせ可能なのでnoindex
 User-agent: *

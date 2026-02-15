@@ -1,7 +1,7 @@
 [project]
-name = "hikkoshinoise-pipeline"
+name = "hikkoshimap-pipeline"
 version = "0.1.0"
-description = "ヒッコシノイズ データパイプライン - 東京都の住環境リスクデータを収集・加工"
+description = "ヒッコシマップ データパイプライン - 東京都の住環境リスクデータを収集・加工"
 requires-python = ">=3.12"
 readme = "README.md"
 

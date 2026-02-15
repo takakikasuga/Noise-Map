@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
+import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
 import { getAllStations, getAllAreas } from '@/lib/db';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -9,26 +9,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   const cityPages: MetadataRoute.Sitemap = TOKYO_MUNICIPALITIES.map((m) => ({
-    url: `https://hikkoshinoise.com/city/${m.nameEn}`,
+    url: `https://hikkoshimap.com/city/${m.nameEn}`,
     changeFrequency: 'monthly' as const,
     priority: 0.9,
   }));
 
   const stationPages: MetadataRoute.Sitemap = stations.map((s) => ({
-    url: `https://hikkoshinoise.com/station/${(s as { nameEn: string }).nameEn}`,
+    url: `https://hikkoshimap.com/station/${(s as { nameEn: string }).nameEn}`,
     changeFrequency: 'monthly',
     priority: 0.8,
   }));
 
   const areaPages: MetadataRoute.Sitemap = areas.map((a) => ({
-    url: `https://hikkoshinoise.com/area/${(a as { nameEn: string }).nameEn}`,
+    url: `https://hikkoshimap.com/area/${(a as { nameEn: string }).nameEn}`,
     changeFrequency: 'monthly',
     priority: 0.6,
   }));
 
   return [
     {
-      url: 'https://hikkoshinoise.com',
+      url: 'https://hikkoshimap.com',
       changeFrequency: 'weekly',
       priority: 1.0,
     },

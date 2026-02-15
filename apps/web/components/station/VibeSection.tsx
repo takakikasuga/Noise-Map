@@ -1,5 +1,5 @@
-import type { VibeData } from '@hikkoshinoise/shared';
-import { Badge } from '@hikkoshinoise/ui';
+import type { VibeData } from '@hikkoshimap/shared';
+import { Badge } from '@hikkoshimap/ui';
 
 interface VibeSectionProps {
   data: VibeData;

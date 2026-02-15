@@ -1,9 +1,9 @@
 ---
 name: hikkoshi-supabase
-description: "ヒッコシノイズのSupabaseスキーマ・RLS・クエリパターン。DB関連の実装（マイグレーション作成、クエリ最適化、RLSポリシー、PostGIS空間クエリ）時に使用。"
+description: "ヒッコシマップのSupabaseスキーマ・RLS・クエリパターン。DB関連の実装（マイグレーション作成、クエリ最適化、RLSポリシー、PostGIS空間クエリ）時に使用。"
 ---
 
-# ヒッコシノイズ Supabaseスキル
+# ヒッコシマップ Supabaseスキル
 
 Supabase（PostgreSQL + PostGIS）関連の実装ガイドライン。
 

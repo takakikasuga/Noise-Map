@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
-import { ScoreBadge } from '@hikkoshinoise/ui';
+import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
+import { ScoreBadge } from '@hikkoshimap/ui';
 import {
   getStationsByMunicipality,
   getAreasByMunicipality,
@@ -123,7 +123,7 @@ export default async function CityPage({
         '@type': 'ListItem',
         position: 1,
         name: 'ホーム',
-        item: 'https://hikkoshinoise.com',
+        item: 'https://hikkoshimap.com',
       },
       { '@type': 'ListItem', position: 2, name: muni.name },
     ],

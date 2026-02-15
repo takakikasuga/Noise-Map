@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ScoreBadge } from '@hikkoshinoise/ui';
+import { ScoreBadge } from '@hikkoshimap/ui';
 
 interface NearbyArea {
   areaName: string;
