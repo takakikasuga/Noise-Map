@@ -1,18 +1,115 @@
-import type { SafetyScore } from '@hikkoshinoise/shared';
+'use client';
 
-interface SafetySectionProps {
-  data: SafetyScore;
+import { useState } from 'react';
+import { ScoreGauge } from '@hikkoshinoise/ui';
+
+/** クライアントに渡すデータの最小型 (server-serialization) */
+interface SafetyData {
+  year: number;
+  score: number;
+  rank: number | null;
+  totalCrimes: number;
+  crimesViolent: number;
+  crimesAssault: number;
+  crimesTheft: number;
+  crimesIntellectual: number;
+  crimesOther: number;
+  previousYearTotal: number | null;
 }
 
-/**
- * 治安セクションコンポーネント
- * 犯罪発生件数・種別をグラフとスコアで表示
- */
+interface SafetySectionProps {
+  data: SafetyData[];
+}
+
 export function SafetySection({ data }: SafetySectionProps) {
+  const sorted = [...data].sort((a, b) => b.year - a.year);
+  const latestYear = sorted[0]?.year ?? new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(latestYear);
+
+  const selected = sorted.find((d) => d.year === selectedYear) ?? sorted[0];
+  if (!selected) return null;
+
+  const crimeRows = [
+    { label: '凶悪犯', count: selected.crimesViolent },
+    { label: '粗暴犯', count: selected.crimesAssault },
+    { label: '窃盗犯', count: selected.crimesTheft },
+    { label: '知能犯', count: selected.crimesIntellectual },
+    { label: 'その他', count: selected.crimesOther },
+  ];
+
+  const delta =
+    selected.previousYearTotal != null
+      ? selected.totalCrimes - selected.previousYearTotal
+      : null;
+  const pctChange =
+    delta != null && selected.previousYearTotal
+      ? (delta / selected.previousYearTotal) * 100
+      : null;
+
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold">治安</h2>
-      <p className="text-gray-400">治安スコア: {data.score}</p>
+      <h2 className="text-xl font-semibold">🛡️ 治安 (Safety)</h2>
+
+      <div className="flex items-center gap-6">
+        <ScoreGauge score={selected.score} label="治安スコア" />
+        {selected.rank != null && (
+          <p className="text-sm text-gray-600">659駅中 <span className="font-bold text-lg">{selected.rank}</span>位</p>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        {sorted.map((d) => (
+          <button
+            key={d.year}
+            onClick={() => setSelectedYear(d.year)}
+            className={`rounded-md px-3 py-1 text-sm font-medium transition ${
+              d.year === selectedYear
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {d.year}
+          </button>
+        ))}
+      </div>
+
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-left">
+            <th className="py-2">種別</th>
+            <th className="py-2 text-right">件数</th>
+          </tr>
+        </thead>
+        <tbody>
+          {crimeRows.map((row) => (
+            <tr key={row.label} className="border-b">
+              <td className="py-2">{row.label}</td>
+              <td className="py-2 text-right">{row.count}件</td>
+            </tr>
+          ))}
+          <tr className="font-bold">
+            <td className="py-2">合計</td>
+            <td className="py-2 text-right">{selected.totalCrimes}件</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {delta != null && pctChange != null && (
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-gray-600">前年比:</span>
+          {delta > 0 ? (
+            <span className="flex items-center gap-1 text-red-600">
+              ↑ +{delta}件 (+{pctChange.toFixed(1)}%)
+            </span>
+          ) : delta < 0 ? (
+            <span className="flex items-center gap-1 text-green-600">
+              ↓ {delta}件 ({pctChange.toFixed(1)}%)
+            </span>
+          ) : (
+            <span className="text-gray-600">±0件 (0%)</span>
+          )}
+        </div>
+      )}
     </section>
   );
 }

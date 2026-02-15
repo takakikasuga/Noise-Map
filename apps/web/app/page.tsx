@@ -1,9 +1,18 @@
-// トップページ：検索 + 東京都マップ
-export default function HomePage() {
+import Link from 'next/link';
+import { getStationListForSearch, getTopStations, getBottomStations } from '@/lib/db';
+import { SearchBar } from '@/components/ui/SearchBar';
+
+export default async function HomePage() {
+  const [stations, topStations, bottomStations] = await Promise.all([
+    getStationListForSearch(),
+    getTopStations(5),
+    getBottomStations(5),
+  ]);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {/* ヒーローセクション */}
-      <section className="text-center">
+      <section className="text-center py-8">
         <h1 className="text-4xl font-bold tracking-tight">
           ヒッコシノイズ
         </h1>
@@ -11,24 +20,68 @@ export default function HomePage() {
           東京都の住環境リスクを、忖度なく可視化する。
         </p>
         <p className="mt-2 text-sm text-gray-500">
-          約800駅の治安・災害・街の雰囲気を客観データ＋住民の声で評価
+          約{stations.length}駅の治安・災害・街の雰囲気を客観データで評価
         </p>
       </section>
 
-      {/* 検索バー（プレースホルダー） */}
+      {/* 検索バー */}
       <section className="mx-auto max-w-xl">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="駅名を入力して検索..."
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-          />
+        <SearchBar stations={stations as { name: string; nameEn: string }[]} />
+      </section>
+
+      {/* ランキングセクション */}
+      <section className="grid gap-8 md:grid-cols-2">
+        {/* 安全な駅 TOP 5 */}
+        <div className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-green-700">安全な駅 TOP 5</h2>
+          <ol className="space-y-3">
+            {topStations.map((station, i) => (
+              <li key={station.nameEn}>
+                <Link
+                  href={`/station/${station.nameEn}`}
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-800">
+                      {i + 1}
+                    </span>
+                    <span className="font-medium">{station.name}駅</span>
+                  </span>
+                  <span className="text-sm text-green-600 font-semibold">{station.score.toFixed(1)}</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        {/* 注意が必要な駅 TOP 5 */}
+        <div className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-red-700">注意が必要な駅 TOP 5</h2>
+          <ol className="space-y-3">
+            {bottomStations.map((station, i) => (
+              <li key={station.nameEn}>
+                <Link
+                  href={`/station/${station.nameEn}`}
+                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-800">
+                      {i + 1}
+                    </span>
+                    <span className="font-medium">{station.name}駅</span>
+                  </span>
+                  <span className="text-sm text-red-600 font-semibold">{station.score.toFixed(1)}</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
       {/* 地図プレースホルダー */}
       <section className="rounded-lg border bg-white p-8 text-center text-gray-400">
-        <p>東京都マップ（Leaflet）がここに表示されます</p>
+        <p className="text-lg">地図機能は近日公開</p>
+        <p className="mt-1 text-sm">東京都全域の駅をマップ上で確認できるようになります</p>
       </section>
     </div>
   );

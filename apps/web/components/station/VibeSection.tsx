@@ -1,23 +1,74 @@
 import type { VibeData } from '@hikkoshinoise/shared';
+import { Badge } from '@hikkoshinoise/ui';
 
 interface VibeSectionProps {
   data: VibeData;
 }
 
-/**
- * 雰囲気セクションコンポーネント
- * 人口構成・施設数・タグを表示
- */
+function PopulationBar({ label, ratio, color }: { label: string; ratio: number; color: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-24 text-sm">{label}</span>
+      <div className="flex-1 h-2 bg-gray-200 rounded-full">
+        <div className={`h-2 ${color} rounded-full`} style={{ width: `${ratio * 100}%` }} />
+      </div>
+      <span className="w-12 text-right text-sm">{(ratio * 100).toFixed(1)}%</span>
+    </div>
+  );
+}
+
+function getDaytimeInterpretation(ratio: number): string {
+  if (ratio > 1.5) return `オフィス街・繁華街 (昼間人口が夜間の ${ratio.toFixed(2)}倍)`;
+  if (ratio < 0.8) return 'ベッドタウン (住宅中心の静かなエリア)';
+  return '昼夜バランス型';
+}
+
+const facilities = [
+  { key: 'restaurantCount', icon: '🍽️', label: '飲食店' },
+  { key: 'convenienceStoreCount', icon: '🏪', label: 'コンビニ' },
+  { key: 'parkCount', icon: '🌳', label: '公園' },
+  { key: 'schoolCount', icon: '🏫', label: '学校' },
+  { key: 'hospitalCount', icon: '🏥', label: '病院' },
+] as const;
+
 export function VibeSection({ data }: VibeSectionProps) {
   return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-semibold">街の雰囲気</h2>
+    <section className="space-y-6">
+      <h2 className="text-xl font-semibold">🎭 街の雰囲気 (Vibe)</h2>
+
       <div className="flex flex-wrap gap-2">
         {data.tags.map((tag) => (
-          <span key={tag} className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800">
-            {tag}
-          </span>
+          <Badge key={tag} label={tag} color="blue" />
         ))}
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-base font-medium">人口構成</h3>
+        <PopulationBar label="若年層" ratio={data.populationYoungRatio} color="bg-blue-500" />
+        <PopulationBar label="ファミリー層" ratio={data.populationFamilyRatio} color="bg-green-500" />
+        <PopulationBar label="高齢者 (65歳+)" ratio={data.populationElderlyRatio} color="bg-amber-500" />
+        <PopulationBar label="単身世帯" ratio={data.singleHouseholdRatio} color="bg-purple-500" />
+      </div>
+
+      <div className="space-y-1">
+        <h3 className="text-base font-medium">昼間人口比率</h3>
+        <p className="text-2xl font-bold">{data.daytimePopulationRatio.toFixed(2)}</p>
+        <p className="text-sm text-gray-600">{getDaytimeInterpretation(data.daytimePopulationRatio)}</p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-base font-medium">周辺施設</h3>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          {facilities.map((f) => (
+            <div key={f.key} className="flex items-center gap-2 rounded-lg border p-3">
+              <span className="text-xl">{f.icon}</span>
+              <div>
+                <p className="text-lg font-bold">{data[f.key]}</p>
+                <p className="text-xs text-gray-600">{f.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

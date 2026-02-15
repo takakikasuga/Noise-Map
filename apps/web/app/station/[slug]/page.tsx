@@ -1,71 +1,170 @@
-// 駅ページ（SSG、約800ページ自動生成）
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import type { SafetyScore } from '@hikkoshinoise/shared';
+import type { VibeData } from '@hikkoshinoise/shared';
+import type { HazardData } from '@hikkoshinoise/shared';
+import { ScoreGauge } from '@hikkoshinoise/ui';
+import {
+  getAllStations,
+  getStationBySlug,
+  getStationSafety,
+  getStationVibe,
+  getStationHazard,
+} from '@/lib/db';
+import { SafetySection } from '@/components/station/SafetySection';
+import { HazardSection } from '@/components/station/HazardSection';
+import { VibeSection } from '@/components/station/VibeSection';
 
-// SSG用パラメータ生成スタブ
+/** SSG: 全駅のスラッグを生成 */
 export async function generateStaticParams() {
-  // TODO: Supabase から全駅のスラッグを取得
-  // 開発時はダミーデータを返す
-  return [
-    { slug: 'shinjuku' },
-    { slug: 'shibuya' },
-    { slug: 'ikebukuro' },
-  ];
+  const stations = await getAllStations();
+  return stations.map((s) => ({ slug: (s as { nameEn: string }).nameEn }));
 }
 
-// メタデータ生成
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+/** 動的メタデータ生成 */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
-  // TODO: Supabase から駅名を取得
+  const station = await getStationBySlug(slug);
+
+  if (!station) {
+    return { title: '駅が見つかりません' };
+  }
+
+  const name = station.name as string;
+  const municipalityName = station.municipalityName as string;
+
   return {
-    title: `${slug} 駅の住環境リスク`,
-    description: `${slug} 駅周辺の治安・災害リスク・街の雰囲気を客観データで評価`,
+    title: `${name}駅の住環境リスク`,
+    description: `${name}駅（${municipalityName}）周辺の治安・災害リスク・街の雰囲気を客観データで評価。犯罪件数、人口構成、周辺施設データを掲載。`,
   };
 }
 
-export default async function StationPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function StationPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
+  const station = await getStationBySlug(slug);
+
+  if (!station) {
+    notFound();
+  }
+
+  const stationId = station.id as string;
+
+  const [safetyData, vibeData, hazardData] = await Promise.all([
+    getStationSafety(stationId),
+    getStationVibe(stationId),
+    getStationHazard(stationId),
+  ]);
+
+  const name = station.name as string;
+  const municipalityName = station.municipalityName as string;
+  const lines = (station.lines as string[]) ?? [];
+
+  // SafetySection に渡すデータ: クライアント送信量を最小化 (server-serialization)
+  const safetyForClient = safetyData.map((d) => {
+    const s = d as unknown as SafetyScore;
+    return {
+      year: s.year,
+      score: s.score,
+      rank: s.rank,
+      totalCrimes: s.totalCrimes,
+      crimesViolent: s.crimesViolent,
+      crimesAssault: s.crimesAssault,
+      crimesTheft: s.crimesTheft,
+      crimesIntellectual: s.crimesIntellectual,
+      crimesOther: s.crimesOther,
+      previousYearTotal: s.previousYearTotal,
+    };
+  });
+
+  const latestSafety = safetyForClient.length > 0 ? safetyForClient[0] : null;
 
   return (
     <div className="space-y-8">
       {/* 駅ヘッダー */}
       <section>
-        <h1 className="text-3xl font-bold">{slug} 駅</h1>
-        <p className="mt-2 text-gray-600">住環境リスク情報</p>
+        <h1 className="text-3xl font-bold">{name}駅</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+            {municipalityName}
+          </span>
+          {lines.map((line) => (
+            <span
+              key={line}
+              className="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700"
+            >
+              {line}
+            </span>
+          ))}
+        </div>
       </section>
 
-      {/* ノイズスコア（プレースホルダー） */}
+      {/* スコアサマリー */}
       <section className="rounded-lg border bg-white p-6">
-        <h2 className="text-xl font-semibold">ノイズスコア</h2>
-        <p className="mt-2 text-gray-400">スコア表示がここに入ります</p>
+        <h2 className="mb-4 text-lg font-semibold">ノイズスコア</h2>
+        <div className="flex flex-wrap gap-8 justify-center">
+          {latestSafety && (
+            <ScoreGauge score={latestSafety.score} label="治安" size="lg" />
+          )}
+          {hazardData && (
+            <ScoreGauge
+              score={(hazardData as unknown as HazardData).score}
+              label="災害"
+              size="lg"
+            />
+          )}
+        </div>
+        {!latestSafety && !hazardData && (
+          <p className="text-center text-gray-400">スコアデータは準備中です</p>
+        )}
       </section>
 
-      {/* 地図（プレースホルダー） */}
+      {/* 治安セクション */}
       <section className="rounded-lg border bg-white p-6">
-        <h2 className="text-xl font-semibold">周辺マップ</h2>
-        <p className="mt-2 text-gray-400">Leaflet 地図がここに表示されます</p>
+        {safetyForClient.length > 0 ? (
+          <SafetySection data={safetyForClient} />
+        ) : (
+          <div>
+            <h2 className="text-xl font-semibold">治安</h2>
+            <p className="mt-2 text-gray-400">治安データは準備中です</p>
+          </div>
+        )}
       </section>
 
-      {/* 治安セクション（プレースホルダー） */}
+      {/* 災害リスクセクション */}
       <section className="rounded-lg border bg-white p-6">
-        <h2 className="text-xl font-semibold">治安</h2>
-        <p className="mt-2 text-gray-400">治安データがここに表示されます</p>
+        <HazardSection data={hazardData as unknown as HazardData | null} />
       </section>
 
-      {/* 災害セクション（プレースホルダー） */}
+      {/* 雰囲気セクション */}
       <section className="rounded-lg border bg-white p-6">
-        <h2 className="text-xl font-semibold">災害リスク</h2>
-        <p className="mt-2 text-gray-400">災害データがここに表示されます</p>
+        {vibeData ? (
+          <VibeSection data={vibeData as unknown as VibeData} />
+        ) : (
+          <div>
+            <h2 className="text-xl font-semibold">街の雰囲気</h2>
+            <p className="mt-2 text-gray-400">雰囲気データは準備中です</p>
+          </div>
+        )}
       </section>
 
-      {/* 雰囲気セクション（プレースホルダー） */}
-      <section className="rounded-lg border bg-white p-6">
-        <h2 className="text-xl font-semibold">街の雰囲気</h2>
-        <p className="mt-2 text-gray-400">雰囲気データがここに表示されます</p>
+      {/* 地図プレースホルダー */}
+      <section className="rounded-lg border bg-white p-6 text-center text-gray-400">
+        <h2 className="text-xl font-semibold text-gray-900">周辺マップ</h2>
+        <p className="mt-2">地図機能は近日公開</p>
       </section>
 
-      {/* 口コミセクション（プレースホルダー） */}
-      <section className="rounded-lg border bg-white p-6">
-        <h2 className="text-xl font-semibold">住民の声</h2>
-        <p className="mt-2 text-gray-400">口コミがここに表示されます</p>
+      {/* 口コミプレースホルダー */}
+      <section className="rounded-lg border bg-white p-6 text-center text-gray-400">
+        <h2 className="text-xl font-semibold text-gray-900">住民の声</h2>
+        <p className="mt-2">口コミ機能は近日公開</p>
       </section>
     </div>
   );
