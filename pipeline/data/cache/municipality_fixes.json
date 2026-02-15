@@ -1,0 +1,362 @@
+[
+  {
+    "id": "d2b234da-6687-4ac0-8bb3-9737fff35fc9",
+    "name": "聖蹟桜ヶ丘",
+    "old_code": "13224",
+    "old_name": "稲城市",
+    "new_code": "13224",
+    "new_name": "多摩市"
+  },
+  {
+    "id": "3bea9345-b849-40d3-9668-b08b5394f504",
+    "name": "京王よみうりランド",
+    "old_code": "13225",
+    "old_name": "羽村市",
+    "new_code": "13225",
+    "new_name": "稲城市"
+  },
+  {
+    "id": "3d9ec2b3-0952-4449-a056-306478398d88",
+    "name": "京王多摩センター",
+    "old_code": "13224",
+    "old_name": "稲城市",
+    "new_code": "13224",
+    "new_name": "多摩市"
+  },
+  {
+    "id": "056bac02-d87d-48c9-b0bc-3be4194426d0",
+    "name": "京王永山",
+    "old_code": "13224",
+    "old_name": "稲城市",
+    "new_code": "13224",
+    "new_name": "多摩市"
+  },
+  {
+    "id": "8a9304bf-30bb-4cf1-ab6f-2867e9f16956",
+    "name": "稲城",
+    "old_code": "13225",
+    "old_name": "羽村市",
+    "new_code": "13225",
+    "new_name": "稲城市"
+  },
+  {
+    "id": "8c0c22ae-bb69-4212-b0c9-54382adbc72b",
+    "name": "狛江",
+    "old_code": "13219",
+    "old_name": "東大和市",
+    "new_code": "13219",
+    "new_name": "狛江市"
+  },
+  {
+    "id": "70c2d454-1265-4e19-a034-ba791e1bd10f",
+    "name": "和泉多摩川",
+    "old_code": "13219",
+    "old_name": "東大和市",
+    "new_code": "13219",
+    "new_name": "狛江市"
+  },
+  {
+    "id": "ee719f9f-17aa-4970-942f-303cccfc1ee1",
+    "name": "唐木田",
+    "old_code": "13224",
+    "old_name": "稲城市",
+    "new_code": "13224",
+    "new_name": "多摩市"
+  },
+  {
+    "id": "b8dcde27-0bb4-4003-b221-e7b5af489030",
+    "name": "小田急多摩センター",
+    "old_code": "13224",
+    "old_name": "稲城市",
+    "new_code": "13224",
+    "new_name": "多摩市"
+  },
+  {
+    "id": "aeffc6e4-5170-4b01-a828-2f12eb01d1e8",
+    "name": "小田急永山",
+    "old_code": "13224",
+    "old_name": "稲城市",
+    "new_code": "13224",
+    "new_name": "多摩市"
+  },
+  {
+    "id": "31efa6ea-2eac-42ff-9b1c-57232778ebc6",
+    "name": "田無",
+    "old_code": "13229",
+    "old_name": "田無町四丁目",
+    "new_code": "13229",
+    "new_name": "西東京市"
+  },
+  {
+    "id": "8fa5cf79-33a6-4697-8185-ff74f8d0af5e",
+    "name": "西武柳沢",
+    "old_code": "13229",
+    "old_name": "柳沢六丁目",
+    "new_code": "13229",
+    "new_name": "西東京市"
+  },
+  {
+    "id": "0be376c9-95ba-47bb-b239-31bbe981071e",
+    "name": "東伏見",
+    "old_code": "13229",
+    "old_name": "東伏見二丁目",
+    "new_code": "13229",
+    "new_name": "西東京市"
+  },
+  {
+    "id": "68b8aa33-5d85-488f-820a-cb39941419f2",
+    "name": "清瀬",
+    "old_code": "13221",
+    "old_name": "東久留米市",
+    "new_code": "13221",
+    "new_name": "清瀬市"
+  },
+  {
+    "id": "0d6f11af-211b-4bab-9184-397baa6b4bf5",
+    "name": "秋津",
+    "old_code": "13221",
+    "old_name": "東久留米市",
+    "new_code": "13213",
+    "new_name": "東村山市"
+  },
+  {
+    "id": "d0960c7a-5c0d-493c-a04f-a841b546c2dc",
+    "name": "東久留米",
+    "old_code": "13222",
+    "old_name": "武蔵村山市",
+    "new_code": "13222",
+    "new_name": "東久留米市"
+  },
+  {
+    "id": "17381e05-4194-4669-99d1-47da78ca3f24",
+    "name": "ひばりヶ丘",
+    "old_code": "13229",
+    "old_name": "ひばりが丘北三丁目",
+    "new_code": "13229",
+    "new_name": "西東京市"
+  },
+  {
+    "id": "d2f4cb58-b87f-467c-bc98-19ef04ee7cf5",
+    "name": "保谷",
+    "old_code": "13229",
+    "old_name": "下保谷四丁目",
+    "new_code": "13229",
+    "new_name": "西東京市"
+  },
+  {
+    "id": "89efa1b9-bff6-483e-a556-8288f8425679",
+    "name": "拝島",
+    "old_code": "13218",
+    "old_name": "狛江市",
+    "new_code": "13218",
+    "new_name": "福生市"
+  },
+  {
+    "id": "277155b8-51bb-48d4-bc2b-28b625b2358b",
+    "name": "東大和市",
+    "old_code": "13220",
+    "old_name": "清瀬市",
+    "new_code": "13220",
+    "new_name": "東大和市"
+  },
+  {
+    "id": "ae2b49d6-1ce6-476b-9865-3872a6aa9f8d",
+    "name": "桜街道",
+    "old_code": "13220",
+    "old_name": "清瀬市",
+    "new_code": "13220",
+    "new_name": "東大和市"
+  },
+  {
+    "id": "1dbc7e96-d3f4-45bd-96ff-a215a7e247e8",
+    "name": "多摩センター",
+    "old_code": "13224",
+    "old_name": "稲城市",
+    "new_code": "13224",
+    "new_name": "多摩市"
+  },
+  {
+    "id": "efe5c2c0-272d-402c-8259-0e225683b152",
+    "name": "上北台",
+    "old_code": "13220",
+    "old_name": "清瀬市",
+    "new_code": "13220",
+    "new_name": "東大和市"
+  },
+  {
+    "id": "a2e83a8c-c2db-45f0-8b4e-7a6fdaa238e5",
+    "name": "広尾",
+    "old_code": "13113",
+    "old_name": "渋谷区",
+    "new_code": "13103",
+    "new_name": "港区"
+  },
+  {
+    "id": "41d2f9da-9a36-4759-a68b-83c416c3c206",
+    "name": "赤坂見附",
+    "old_code": "13103",
+    "old_name": "港区",
+    "new_code": "13101",
+    "new_name": "千代田区"
+  },
+  {
+    "id": "5bcdb501-dc42-4010-9efa-624e29f3ce3a",
+    "name": "四ツ谷",
+    "old_code": "13101",
+    "old_name": "千代田区",
+    "new_code": "13104",
+    "new_name": "新宿区"
+  },
+  {
+    "id": "33bf8eab-38c9-4e2c-9d89-b4b6f97cec06",
+    "name": "地下鉄赤塚",
+    "old_code": "13120",
+    "old_name": "練馬区",
+    "new_code": "13119",
+    "new_name": "板橋区"
+  },
+  {
+    "id": "523f5a2e-c626-48ce-90d3-bfd7c755d7f3",
+    "name": "新江古田",
+    "old_code": "13120",
+    "old_name": "練馬区",
+    "new_code": "13114",
+    "new_name": "中野区"
+  },
+  {
+    "id": "4f062020-ab78-47d7-8fbb-0b4ce1c7f9a9",
+    "name": "西ヶ原四丁目",
+    "old_code": "13117",
+    "old_name": "北区",
+    "new_code": "13116",
+    "new_name": "豊島区"
+  },
+  {
+    "id": "8defc445-3e7e-4a61-9b7b-ee6f959621d7",
+    "name": "武蔵引田",
+    "old_code": "13228",
+    "old_name": "西東京市",
+    "new_code": "13228",
+    "new_name": "あきる野市"
+  },
+  {
+    "id": "506b3a30-06d1-459a-914e-f4021b9c1090",
+    "name": "武蔵五日市",
+    "old_code": "13228",
+    "old_name": "西東京市",
+    "new_code": "13228",
+    "new_name": "あきる野市"
+  },
+  {
+    "id": "0208e2e3-007b-4402-a94d-4f8154ff994b",
+    "name": "武蔵増戸",
+    "old_code": "13228",
+    "old_name": "西東京市",
+    "new_code": "13228",
+    "new_name": "あきる野市"
+  },
+  {
+    "id": "55a3b4be-6a67-4f1a-81e1-d8b4a4f4c314",
+    "name": "熊川",
+    "old_code": "13218",
+    "old_name": "狛江市",
+    "new_code": "13218",
+    "new_name": "福生市"
+  },
+  {
+    "id": "aea21709-c0fc-4733-bc1a-26a12313ef11",
+    "name": "秋川",
+    "old_code": "13228",
+    "old_name": "西東京市",
+    "new_code": "13228",
+    "new_name": "あきる野市"
+  },
+  {
+    "id": "fea8a51f-fe85-45e9-8f80-7c447928b0c2",
+    "name": "東秋留",
+    "old_code": "13228",
+    "old_name": "西東京市",
+    "new_code": "13228",
+    "new_name": "あきる野市"
+  },
+  {
+    "id": "61a9fab2-457a-4d96-902c-ae2121dd432b",
+    "name": "西立川",
+    "old_code": "13207",
+    "old_name": "昭島市",
+    "new_code": "13202",
+    "new_name": "立川市"
+  },
+  {
+    "id": "5bd03e5a-25d8-4b16-a32a-1ada6a712644",
+    "name": "小作",
+    "old_code": "13227",
+    "old_name": "あきる野市",
+    "new_code": "13227",
+    "new_name": "羽村市"
+  },
+  {
+    "id": "95765a3f-0818-4fca-9f60-1664cd65a00d",
+    "name": "牛浜",
+    "old_code": "13218",
+    "old_name": "狛江市",
+    "new_code": "13218",
+    "new_name": "福生市"
+  },
+  {
+    "id": "95de0327-2ef4-4238-bcc1-ea862e30ed82",
+    "name": "福生",
+    "old_code": "13218",
+    "old_name": "狛江市",
+    "new_code": "13218",
+    "new_name": "福生市"
+  },
+  {
+    "id": "abc66525-56be-4439-be7d-c45300e2f143",
+    "name": "羽村",
+    "old_code": "13227",
+    "old_name": "あきる野市",
+    "new_code": "13227",
+    "new_name": "羽村市"
+  },
+  {
+    "id": "32f7ecd6-9962-4052-a9c7-c639f819e977",
+    "name": "三鷹",
+    "old_code": "13203",
+    "old_name": "武蔵野市",
+    "new_code": "13204",
+    "new_name": "三鷹市"
+  },
+  {
+    "id": "59b7b5a9-f131-4ba6-b398-63c10f874123",
+    "name": "矢野口",
+    "old_code": "13225",
+    "old_name": "羽村市",
+    "new_code": "13225",
+    "new_name": "稲城市"
+  },
+  {
+    "id": "3ce9832e-1bde-4644-8465-9b35996d7ad3",
+    "name": "稲城長沼",
+    "old_code": "13225",
+    "old_name": "羽村市",
+    "new_code": "13225",
+    "new_name": "稲城市"
+  },
+  {
+    "id": "a75fb5ea-df71-43d9-8120-72c6549270fa",
+    "name": "南多摩",
+    "old_code": "13225",
+    "old_name": "羽村市",
+    "new_code": "13225",
+    "new_name": "稲城市"
+  },
+  {
+    "id": "e789fc74-56d5-4190-9a39-12b6c22cedfe",
+    "name": "東福生",
+    "old_code": "13218",
+    "old_name": "狛江市",
+    "new_code": "13218",
+    "new_name": "福生市"
+  }
+]
