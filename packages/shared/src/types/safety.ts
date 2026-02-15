@@ -3,6 +3,7 @@ export interface SafetyScore {
   id: string;
   stationId: string;
   year: number;
+  month: number | null;
   totalCrimes: number;
   crimesViolent: number;
   crimesAssault: number;
@@ -12,5 +13,6 @@ export interface SafetyScore {
   score: number;
   rank: number | null;
   previousYearTotal: number | null;
+  dataGranularity: 'town' | 'municipality';
   updatedAt: string;
 }

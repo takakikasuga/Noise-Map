@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
+/** Supabase レスポンス用の snake_case 型（共有型 UgcPost の DB 応答形式） */
 interface UgcPost {
   id: string;
   content: string;

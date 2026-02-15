@@ -5,6 +5,7 @@ import L from 'leaflet';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { SCORE_MAX } from '@/lib/constants';
 
 // Fix default marker icons for webpack/Next.js bundling
 L.Icon.Default.mergeOptions({
@@ -27,14 +28,14 @@ interface OverviewMapInnerProps {
 }
 
 function scoreToColor(score: number): string {
-  const clamped = Math.max(0, Math.min(55, score));
-  const hue = (clamped / 55) * 120;
+  const clamped = Math.max(0, Math.min(SCORE_MAX, score));
+  const hue = (clamped / SCORE_MAX) * 120;
   return `hsl(${hue}, 70%, 45%)`;
 }
 
 function scoreToFill(score: number): string {
-  const clamped = Math.max(0, Math.min(55, score));
-  const hue = (clamped / 55) * 120;
+  const clamped = Math.max(0, Math.min(SCORE_MAX, score));
+  const hue = (clamped / SCORE_MAX) * 120;
   return `hsl(${hue}, 70%, 55%)`;
 }
 

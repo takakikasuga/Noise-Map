@@ -37,10 +37,10 @@ export function HazardSection({ data }: HazardSectionProps) {
             <div className="flex-1 h-2 bg-gray-200 rounded-full">
               <div
                 className={`h-2 ${s.color} rounded-full`}
-                style={{ width: `${data[s.key]}%` }}
+                style={{ width: `${(data[s.key] as number) * 4}%` }}
               />
             </div>
-            <span className="w-10 text-right text-sm font-medium">{data[s.key]}</span>
+            <span className="w-10 text-right text-sm font-medium">{data[s.key]}/25</span>
           </div>
         ))}
       </div>

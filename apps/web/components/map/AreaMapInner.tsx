@@ -5,6 +5,7 @@ import L from 'leaflet';
 import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Feature, FeatureCollection } from 'geojson';
+import { SCORE_MAX } from '@/lib/constants';
 
 L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -25,8 +26,8 @@ interface AreaProperties {
  * 0 → 赤(hue=0), ~27 → 黄(hue=60), 55 → 緑(hue=120)
  */
 function scoreToColor(score: number): string {
-  const clamped = Math.max(0, Math.min(55, score));
-  const hue = (clamped / 55) * 120;
+  const clamped = Math.max(0, Math.min(SCORE_MAX, score));
+  const hue = (clamped / SCORE_MAX) * 120;
   return `hsl(${hue}, 70%, 45%)`;
 }
 
