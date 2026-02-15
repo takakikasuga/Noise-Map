@@ -241,7 +241,7 @@ export async function getRecentUgcPosts(limit: number = 5) {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from('ugc_posts')
-    .select('id, content, category, rating, created_at, station_id, area_name_en, stations(name, name_en)')
+    .select('id, content, category, rating, created_at, area_name_en')
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -267,16 +267,13 @@ export async function getRecentUgcPosts(limit: number = 5) {
   }
 
   return rows.map((row) => {
-    const station = row.stations as unknown as { name: string; name_en: string } | null;
     const areaEn = row.area_name_en as string | null;
     return {
-      id: row.id as string,
-      content: row.content as string,
-      category: row.category as string,
+      id: row.id,
+      content: row.content,
+      category: row.category,
       rating: row.rating as number | null,
-      createdAt: row.created_at as string,
-      stationName: station?.name ?? null,
-      stationNameEn: station?.name_en ?? null,
+      createdAt: row.created_at,
       areaNameEn: areaEn,
       areaName: areaEn ? (areaNameMap[areaEn] ?? null) : null,
     };
@@ -471,4 +468,30 @@ export async function getMunicipalityCrimeStats(municipalityName: string) {
     ...d,
     previousYearTotal: i < sorted.length - 1 ? sorted[i + 1].totalCrimes : null,
   }));
+}
+
+/**
+ * 駅座標から半径内の丁目犯罪データを取得（PostGIS空間クエリ）
+ */
+export async function getNearbyAreas(lat: number, lng: number, radiusM = 500) {
+  const supabase = createSupabaseClient();
+  const { data } = await supabase.rpc('get_nearby_areas', {
+    station_lat: lat,
+    station_lng: lng,
+    radius_m: radiusM,
+  });
+  return snakeToCamelArray((data ?? []) as Record<string, unknown>[]);
+}
+
+/**
+ * エリア座標から半径内の駅を取得（PostGIS空間クエリ）
+ */
+export async function getNearbyStations(lat: number, lng: number, radiusM = 1000) {
+  const supabase = createSupabaseClient();
+  const { data } = await supabase.rpc('get_nearby_stations', {
+    area_lat: lat,
+    area_lng: lng,
+    radius_m: radiusM,
+  });
+  return snakeToCamelArray((data ?? []) as Record<string, unknown>[]);
 }

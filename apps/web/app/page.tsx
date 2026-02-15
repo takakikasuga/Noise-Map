@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
 import { ScoreBadge } from '@hikkoshinoise/ui';
-import { getStationListForSearch, getStationListForMap, getTopStations, getBottomStations, getTopAreas, getBottomAreas, getAreaListForSearch, getRecentUgcPosts } from '@/lib/db';
+import { getStationListForSearch, getStationListForMap, getTopAreas, getBottomAreas, getAreaListForSearch, getRecentUgcPosts } from '@/lib/db';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { OverviewMap } from '@/components/map/OverviewMap';
 import { AreaMap } from '@/components/map/AreaMap';
@@ -10,11 +10,9 @@ const WARDS = TOKYO_MUNICIPALITIES.filter((m) => m.name.endsWith('区'));
 const TAMA = TOKYO_MUNICIPALITIES.filter((m) => !m.name.endsWith('区'));
 
 export default async function HomePage() {
-  const [stations, mapStations, topStations, bottomStations, topAreas, bottomAreas, areas, recentPosts] = await Promise.all([
+  const [stations, mapStations, topAreas, bottomAreas, areas, recentPosts] = await Promise.all([
     getStationListForSearch(),
     getStationListForMap(),
-    getTopStations(5),
-    getBottomStations(5),
     getTopAreas(5),
     getBottomAreas(5),
     getAreaListForSearch(),
@@ -80,53 +78,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 駅ランキング */}
-      <section className="grid gap-8 md:grid-cols-2">
-        <div className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-green-700">安全な駅 TOP 5</h2>
-          <ol className="space-y-3">
-            {topStations.map((station, i) => (
-              <li key={station.nameEn}>
-                <Link
-                  href={`/station/${station.nameEn}`}
-                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-800">
-                      {i + 1}
-                    </span>
-                    <span className="font-medium">{station.name}駅</span>
-                  </span>
-                  <ScoreBadge score={station.score} />
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-red-700">注意が必要な駅 TOP 5</h2>
-          <ol className="space-y-3">
-            {bottomStations.map((station, i) => (
-              <li key={station.nameEn}>
-                <Link
-                  href={`/station/${station.nameEn}`}
-                  className="flex items-center justify-between rounded-md px-3 py-2 hover:bg-gray-50 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-800">
-                      {i + 1}
-                    </span>
-                    <span className="font-medium">{station.name}駅</span>
-                  </span>
-                  <ScoreBadge score={station.score} />
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
       {/* エリアランキング */}
       <section className="grid gap-8 md:grid-cols-2">
         <div className="rounded-lg border bg-white p-6">
@@ -188,14 +139,10 @@ export default async function HomePage() {
                 other: { label: 'その他', color: 'bg-gray-100 text-gray-700' },
               };
               const cat = catMap[post.category] ?? catMap.other;
-              const linkHref = post.stationNameEn
-                ? `/station/${post.stationNameEn}`
-                : post.areaNameEn
-                  ? `/area/${post.areaNameEn}`
-                  : null;
-              const linkLabel = post.stationName
-                ? `${post.stationName}駅`
-                : post.areaName ?? post.areaNameEn;
+              const linkHref = post.areaNameEn
+                ? `/area/${post.areaNameEn}`
+                : null;
+              const linkLabel = post.areaName ?? post.areaNameEn;
 
               return (
                 <div key={post.id} className="py-4 first:pt-0 last:pb-0">

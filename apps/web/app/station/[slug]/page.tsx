@@ -4,17 +4,19 @@ import type { SafetyScore } from '@hikkoshinoise/shared';
 import type { VibeData } from '@hikkoshinoise/shared';
 import type { HazardData } from '@hikkoshinoise/shared';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
-import { ScoreGauge } from '@hikkoshinoise/ui';
+import { ScoreBadge } from '@hikkoshinoise/ui';
 import {
   getAllStations,
   getStationBySlug,
   getStationSafety,
   getStationVibe,
   getStationHazard,
+  getNearbyAreas,
 } from '@/lib/db';
 import { SafetySection } from '@/components/station/SafetySection';
 import { HazardSection } from '@/components/station/HazardSection';
 import { VibeSection } from '@/components/station/VibeSection';
+import { NearbyAreasSection } from '@/components/station/NearbyAreasSection';
 import { StationMap } from '@/components/map/StationMap';
 import { UgcSection } from '@/components/ugc/UgcSection';
 
@@ -71,10 +73,11 @@ export default async function StationPage({
 
   const stationId = station.id as string;
 
-  const [safetyData, vibeData, hazardData] = await Promise.all([
+  const [safetyData, vibeData, hazardData, nearbyAreas] = await Promise.all([
     getStationSafety(stationId),
     getStationVibe(stationId),
     getStationHazard(stationId),
+    getNearbyAreas(station.lat as number, station.lng as number),
   ]);
 
   const name = station.name as string;
@@ -161,29 +164,26 @@ export default async function StationPage({
               </span>
             ))}
           </div>
-        </section>
-
-        {/* スコアサマリー */}
-        <section className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold">ノイズ偏差値</h2>
-          <div className="flex flex-wrap gap-8 justify-center">
-            {latestSafety && (
-              <ScoreGauge score={latestSafety.score} label="治安" size="lg" />
-            )}
-            {hazardData && (
-              <ScoreGauge
-                score={(hazardData as unknown as HazardData).score}
-                label="災害"
-                size="lg"
-              />
-            )}
-          </div>
-          {!latestSafety && !hazardData && (
-            <p className="text-center text-gray-400">偏差値データは準備中です</p>
+          {hazardData && (
+            <div className="mt-3 flex items-center gap-1.5 text-sm">
+              <span className="text-gray-500">災害</span>
+              <ScoreBadge score={(hazardData as unknown as HazardData).score} />
+            </div>
           )}
         </section>
 
-        {/* 治安セクション */}
+        {/* 住民の声（UGC） — スコア直後に配置し投稿率を最大化 */}
+        <section className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-xl font-semibold">住民の声</h2>
+          <UgcSection nearbyAreas={nearbyAreas as { areaName: string; nameEn: string }[]} />
+        </section>
+
+        {/* 周辺エリアの治安（丁目別犯罪ランキング） */}
+        <section className="rounded-lg border bg-white p-6">
+          <NearbyAreasSection areas={nearbyAreas as { areaName: string; nameEn: string; municipalityName: string; totalCrimes: number; score: number; rank: number }[]} />
+        </section>
+
+        {/* 治安セクション（参考: 市区町村全体） */}
         <section className="rounded-lg border bg-white p-6">
           {safetyForClient.length > 0 ? (
             <SafetySection data={safetyForClient} />
@@ -216,12 +216,6 @@ export default async function StationPage({
         <section className="rounded-lg border bg-white p-6">
           <h2 className="mb-4 text-xl font-semibold">周辺マップ</h2>
           <StationMap lat={lat} lng={lng} stationName={name} />
-        </section>
-
-        {/* 住民の声（UGC） */}
-        <section className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-xl font-semibold">住民の声</h2>
-          <UgcSection stationId={stationId} />
         </section>
       </div>
     </>
