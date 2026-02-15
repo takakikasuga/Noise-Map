@@ -113,6 +113,23 @@ export async function getStationVibe(stationId: string) {
 }
 
 /**
+ * エリア（丁目）の雰囲気データを取得
+ */
+export async function getAreaVibe(areaName: string) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('area_vibe_data')
+    .select('*')
+    .eq('area_name', areaName)
+    .limit(1)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  if (!data) return null;
+  return snakeToCamel(data);
+}
+
+/**
  * 駅の災害リスクデータを取得
  */
 export async function getStationHazard(stationId: string) {

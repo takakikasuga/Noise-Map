@@ -1,6 +1,10 @@
 """
 e-Stat API クライアント
 国勢調査データ（年齢構成・世帯構成・昼夜間人口比）を取得
+
+市区町村レベル: fetch_age_distribution / fetch_household_composition / fetch_daytime_ratio
+小地域（町丁字）レベル: fetch_age_distribution_by_area / fetch_household_by_area
+統合: fetch_all_estat_data（市区町村）/ fetch_all_estat_area_data（小地域＋市区町村フォールバック）
 """
 
 import logging
@@ -14,15 +18,25 @@ from config.settings import ESTAT_API_KEY
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://api.e-stat.go.jp/rest/3.0/app/json/getStatsData"
+STATS_LIST_URL = "https://api.e-stat.go.jp/rest/3.0/app/json/getStatsList"
 
-# Dataset IDs
+# Dataset IDs — 市区町村レベル（人口等基本集計）
 STATS_AGE_DISTRIBUTION = "0003445162"
 STATS_HOUSEHOLD_COMPOSITION = "0003445284"
 STATS_DAYTIME_POPULATION = "0003454499"
 
+# Dataset IDs — 小地域集計（国勢調査 令和2年, 東京都）
+# getStatsList(searchKind=2, statsCode=00200521, surveyYears=2020, searchWord=東京都) で取得
+STATS_AGE_SMALL_AREA: str = "8003006792"       # 年齢（5歳階級、4区分）別、男女別人口 東京都
+STATS_HOUSEHOLD_SMALL_AREA: str = "8003006803"  # 世帯人員別一般世帯数 東京都（単身世帯=世帯人員1人）
+
 # 東京都 市区町村コード範囲
 AREA_FROM = "13101"
 AREA_TO = "13421"
+
+# 小地域用: 東京都全域の 11桁 area コード範囲
+SMALL_AREA_FROM = "13101000000"
+SMALL_AREA_TO = "13421999999"
 
 # リトライ設定
 MAX_RETRIES = 3
@@ -319,4 +333,202 @@ def fetch_all_estat_data(api_key: Optional[str] = None) -> dict[str, dict]:
         result[code] = merged
 
     logger.info("e-Stat 統合データ: %d 市区町村", len(result))
+    return result
+
+
+# ── 小地域（町丁字）レベル ────────────────────────────────
+
+
+def fetch_age_distribution_by_area(api_key: str) -> dict[str, dict]:
+    """
+    小地域（町丁字）レベルの年齢構成データを取得。
+
+    e-Stat 小地域集計 statsDataId=8003006792
+    「年齢（5歳階級、4区分）別、男女別人口 東京都」を使用。
+
+    cat01 コード体系（総数のみ使用、男女別は使わない）:
+        0010: 総数（年齢不詳含む）
+        0020: 0-4歳, 0030: 5-9, 0040: 10-14
+        0050: 15-19歳, 0060: 20-24, 0070: 25-29, 0080: 30-34  → young (15-34)
+        0090: 35-39, 0100: 40-44, 0110: 45-49, 0120: 50-54,
+        0130: 55-59, 0140: 60-64  → family (35-64)
+        0150: 65歳以上  → elderly
+
+    @area は 11桁の KEY_CODE（level=4: 丁目レベル）。
+    cat02 は秘匿フラグ（1=無し のみ使用）。
+
+    Returns:
+        {area_code_11digit: {young_ratio, family_ratio, elderly_ratio, total_population}}
+    """
+    logger.info("小地域 年齢構成データを取得中 (statsDataId=%s)...", STATS_AGE_SMALL_AREA)
+    try:
+        values = _fetch_estat_data(api_key, {
+            "statsDataId": STATS_AGE_SMALL_AREA,
+        })
+
+        area_data: dict[str, dict[str, float]] = {}
+        for v in values:
+            area = v.get("@area", "")
+            # 11桁（丁目レベル）のみ対象、秘匿データは除外
+            if len(area) != 11:
+                continue
+            cat02 = v.get("@cat02", "")
+            if cat02 != "1":
+                continue
+            cat01 = v.get("@cat01", "")
+            parsed = _parse_value(v.get("$", ""))
+            if not cat01 or parsed is None:
+                continue
+            area_data.setdefault(area, {})[cat01] = parsed
+
+        # 小地域集計の cat01 コード（総数系のみ）
+        young_codes = {"0050", "0060", "0070", "0080"}       # 15-34歳
+        family_codes = {"0090", "0100", "0110", "0120", "0130", "0140"}  # 35-64歳
+
+        result: dict[str, dict] = {}
+        for area, cats in area_data.items():
+            total = cats.get("0010", 0)
+            if total == 0:
+                continue
+            young = sum(cats.get(c, 0) for c in young_codes)
+            family = sum(cats.get(c, 0) for c in family_codes)
+            elderly = cats.get("0150", 0)  # 65歳以上
+            result[area] = {
+                "young_ratio": round(young / total, 4),
+                "family_ratio": round(family / total, 4),
+                "elderly_ratio": round(elderly / total, 4),
+                "total_population": int(total),
+            }
+
+        if result:
+            logger.info("小地域 年齢構成データ: %d エリア", len(result))
+            return result
+        logger.warning("小地域 年齢構成データが空 — 市区町村レベルにフォールバック")
+    except Exception as e:
+        logger.warning("小地域 年齢構成データ取得失敗: %s — 市区町村レベルにフォールバック", e)
+
+    # フォールバック: 市区町村レベルデータを返す（呼び出し元で key_code[:5] でマッチ）
+    logger.info("市区町村レベル年齢構成データで代替")
+    return fetch_age_distribution(api_key)
+
+
+def fetch_household_by_area(api_key: str) -> dict[str, dict]:
+    """
+    小地域（町丁字）レベルの世帯構成データを取得。
+
+    e-Stat 小地域集計 statsDataId=8003006803
+    「世帯人員別一般世帯数 東京都」を使用。
+
+    cat01 コード体系:
+        0010: 一般世帯数（世帯人員6人以上含む）= 総世帯数
+        0020: 世帯人員1人 = 単身世帯
+
+    @area は 11桁（丁目レベル）。cat02 は秘匿フラグ（1=無し）。
+
+    Returns:
+        {area_code_11digit: {single_ratio, total_households, single_households}}
+    """
+    logger.info("小地域 世帯構成データを取得中 (statsDataId=%s)...", STATS_HOUSEHOLD_SMALL_AREA)
+    try:
+        values = _fetch_estat_data(api_key, {
+            "statsDataId": STATS_HOUSEHOLD_SMALL_AREA,
+        })
+
+        area_data: dict[str, dict[str, float]] = {}
+        for v in values:
+            area = v.get("@area", "")
+            if len(area) != 11:
+                continue
+            cat02 = v.get("@cat02", "")
+            if cat02 != "1":
+                continue
+            cat01 = v.get("@cat01", "")
+            # 総世帯数(0010) と 単身世帯(0020) のみ必要
+            if cat01 not in ("0010", "0020"):
+                continue
+            parsed = _parse_value(v.get("$", ""))
+            if parsed is None:
+                continue
+            area_data.setdefault(area, {})[cat01] = parsed
+
+        result: dict[str, dict] = {}
+        for area, cats in area_data.items():
+            total = cats.get("0010", 0)
+            single = cats.get("0020", 0)
+            if total == 0:
+                continue
+            result[area] = {
+                "single_ratio": round(single / total, 4),
+                "total_households": int(total),
+                "single_households": int(single),
+            }
+
+        if result:
+            logger.info("小地域 世帯構成データ: %d エリア", len(result))
+            return result
+        logger.warning("小地域 世帯構成データが空 — 市区町村レベルにフォールバック")
+    except Exception as e:
+        logger.warning("小地域 世帯構成データ取得失敗: %s — 市区町村レベルにフォールバック", e)
+
+    # フォールバック: 市区町村レベルデータを返す
+    logger.info("市区町村レベル世帯構成データで代替")
+    return fetch_household_composition(api_key)
+
+
+def fetch_all_estat_area_data(api_key: Optional[str] = None) -> dict[str, dict]:
+    """
+    小地域レベルの全 e-Stat データを取得し、area_code でマージ。
+
+    - 年齢構成: 小地域レベル（利用可能な場合）or 市区町村フォールバック
+    - 世帯構成: 小地域レベル（利用可能な場合）or 市区町村フォールバック
+    - 昼夜間人口比: 市区町村レベルのみ（小地域データなし）
+
+    key_code（11桁）でマッチできない場合は municipality_code（5桁）でフォールバック。
+
+    Returns:
+        {area_code: {young_ratio, family_ratio, elderly_ratio,
+                     single_ratio, daytime_ratio, ...},
+         "_daytime_by_muni": {municipality_code: {daytime_ratio}},
+         "_is_municipality_level": bool}
+
+        特殊キー:
+        - "_daytime_by_muni": 昼夜間人口は常に市区町村レベル（呼び出し元で municipality_code でマッチ）
+        - "_is_municipality_level": True なら年齢・世帯も市区町村レベル（key_code[:5] でマッチ必要）
+    """
+    if api_key is None:
+        api_key = ESTAT_API_KEY
+
+    if not api_key:
+        raise ValueError("ESTAT_API_KEY が設定されていません")
+
+    age_data = fetch_age_distribution_by_area(api_key)
+    household_data = fetch_household_by_area(api_key)
+    daytime_data = fetch_daytime_ratio(api_key)
+
+    # 小地域レベルか市区町村レベルかを判定
+    # 小地域の場合 area_code は 11桁、市区町村の場合は 5桁
+    sample_key = next(iter(age_data), "")
+    is_municipality_level = len(sample_key) <= 5
+
+    # area_code でマージ
+    all_codes = set(age_data) | set(household_data)
+    result: dict[str, dict] = {}
+
+    for code in sorted(all_codes):
+        merged: dict[str, Any] = {}
+        if code in age_data:
+            merged.update(age_data[code])
+        if code in household_data:
+            merged.update(household_data[code])
+        result[code] = merged
+
+    # 昼夜間人口と判定フラグを特殊キーで格納
+    result["_daytime_by_muni"] = daytime_data  # type: ignore[assignment]
+    result["_is_municipality_level"] = is_municipality_level  # type: ignore[assignment]
+
+    level_str = "市区町村" if is_municipality_level else "小地域"
+    logger.info(
+        "e-Stat エリア統合データ: %d エリア (%sレベル), 昼夜間=%d 市区町村",
+        len(all_codes), level_str, len(daytime_data),
+    )
     return result

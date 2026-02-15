@@ -1,15 +1,17 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import type { AreaSafety } from '@hikkoshimap/shared';
+import type { AreaSafety, VibeData } from '@hikkoshimap/shared';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
 import { ScoreBadge } from '@hikkoshimap/ui';
 import {
   getAllAreas,
   getAreaBySlug,
   getAreaSafety,
+  getAreaVibe,
   getNearbyStations,
 } from '@/lib/db';
 import { SafetySection } from '@/components/station/SafetySection';
+import { VibeSection } from '@/components/station/VibeSection';
 import { StationMap } from '@/components/map/StationMap';
 import { UgcSection } from '@/components/ugc/UgcSection';
 import { NearbyStationsSection } from '@/components/station/NearbyStationsSection';
@@ -76,10 +78,11 @@ export default async function AreaPage({
   const lat = area.lat as number | null;
   const lng = area.lng as number | null;
 
-  // エリア座標がある場合のみ近くの駅を取得
-  const nearbyStations = (lat != null && lng != null)
-    ? await getNearbyStations(lat, lng)
-    : [];
+  // エリア座標がある場合のみ近くの駅を取得 + Vibeデータ並列フェッチ
+  const [nearbyStations, vibeData] = await Promise.all([
+    (lat != null && lng != null) ? getNearbyStations(lat, lng) : Promise.resolve([]),
+    getAreaVibe(areaName),
+  ]);
 
   // server-serialization: クライアント送信量を最小化
   const safetyForClient = safetyData.map((d) => {
@@ -177,6 +180,18 @@ export default async function AreaPage({
             <div>
               <h2 className="text-xl font-semibold">治安</h2>
               <p className="mt-2 text-gray-400">治安データは準備中です</p>
+            </div>
+          )}
+        </section>
+
+        {/* 雰囲気セクション */}
+        <section className="rounded-lg border bg-white p-6">
+          {vibeData ? (
+            <VibeSection data={vibeData as unknown as VibeData} />
+          ) : (
+            <div>
+              <h2 className="text-xl font-semibold">街の雰囲気</h2>
+              <p className="mt-2 text-gray-400">雰囲気データは準備中です</p>
             </div>
           )}
         </section>

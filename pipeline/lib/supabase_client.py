@@ -45,7 +45,9 @@ def upsert_records(table: str, records: list[dict[str, Any]], on_conflict: str =
 
 def select_all(table: str, columns: str = "*") -> list[dict[str, Any]]:
     """
-    テーブルの全レコードを取得
+    テーブルの全レコードを取得（ページネーション対応）。
+
+    Supabase のデフォルト制限（1,000行）を超えるテーブルも全件取得する。
 
     Args:
         table: テーブル名
@@ -55,8 +57,24 @@ def select_all(table: str, columns: str = "*") -> list[dict[str, Any]]:
         レコードのリスト
     """
     client = get_client()
-    result = client.table(table).select(columns).execute()
-    return result.data if result.data else []
+    all_data: list[dict[str, Any]] = []
+    page_size = 1000
+    offset = 0
+
+    while True:
+        result = (
+            client.table(table)
+            .select(columns)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        rows = result.data or []
+        all_data.extend(rows)
+        if len(rows) < page_size:
+            break
+        offset += page_size
+
+    return all_data
 
 
 def insert_records(table: str, records: list[dict[str, Any]]) -> int:
