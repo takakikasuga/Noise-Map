@@ -107,6 +107,17 @@ FROM town_crimes GROUP BY year ORDER BY year;
 
 期待値: name_en / score / rank は 100%、lat/lng は 99.5%+（「以下不詳」等の特殊エントリのみ NULL）
 
+### 5. UI への反映（コード変更不要）
+
+フロントエンド（`apps/web/lib/db.ts`）は `getLatestYear()` で DB から `MAX(year)` を動的取得する。
+RPC `get_nearby_areas` も `target_year` パラメータで最新年を自動解決する。
+**新年度データを DB に投入するだけで、コード変更なしに UI に反映される。**
+
+年度ハードコードは一切ない:
+- `getLatestYear()`: `safety_scores` の MAX(year) を React `cache()` で重複排除
+- `getYearRange()`: 最古年〜最新年の範囲を返す（方法論ページ等で使用）
+- RPC: `target_year IS NULL` 時に `MAX(year)` を自動取得
+
 ### 既知の注意点
 
 - **Polygon → MultiPolygon**: `crime_parser.py` の `_find_parent_union` は `unary_union` の結果が Polygon になりうる。MultiPolygon に変換済み（修正済み）。
