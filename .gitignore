@@ -20,6 +20,10 @@ __pycache__/
 venv/
 *.egg-info/
 
+# Raw data (Excel files not used by pipeline)
+pipeline/data/raw/**/*.xls
+pipeline/data/raw/**/*.xlsx
+
 # Build
 dist/
 *.tsbuildinfo

@@ -227,6 +227,9 @@ def _find_parent_union(
 
     merged = unary_union(polys)
     centroid = merged.centroid
+    if merged.geom_type == "Polygon":
+        from shapely.geometry import MultiPolygon
+        merged = MultiPolygon([merged])
     return {
         "centroid_wkt": f"POINT({centroid.x} {centroid.y})",
         "boundary_wkt": merged.wkt,

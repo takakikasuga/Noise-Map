@@ -7,17 +7,123 @@ description: "ヒッコシマップのデータパイプライン実装パター
 
 pipeline/ ディレクトリのPythonスクリプトを作成・修正する際のガイドライン。
 
+## 環境セットアップ
+
+```bash
+cd pipeline
+python3.12 -m venv .venv    # Python 3.12 必須（3.10+ の型構文を使用）
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+環境変数（`.env.local` または `.env.production.local`）:
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase プロジェクト URL
+- `SUPABASE_SERVICE_ROLE_KEY` — service_role キー（pipeline 用）
+
 ## スクリプト実行順序（厳守）
 
 ```
-01_fetch_stations.py  → 駅マスタ（他の全スクリプトの前提）
-02_fetch_safety.py    → 治安スコア
-03_fetch_hazard.py    → 災害リスク
-04_fetch_vibe.py      → 雰囲気データ
-05_calculate_scores.py → ランキング再計算
+01_fetch_stations.py       → 駅マスタ（他の全スクリプトの前提）
+02_fetch_safety.py         → 犯罪データ投入 + 駅安全スコア
+03_fetch_hazard.py         → 災害リスク
+04_fetch_vibe.py           → 雰囲気データ
+05_calculate_scores.py     → 総合ランキング再計算
+06_enrich_areas.py         → 町丁目の name_en / score / rank 付与
+07_geocode_missing_areas.py → centroid が NULL の町丁目を GSI ジオコーディング
 ```
 
-01 が完了していない状態で 02〜05 を実行してはならない（stations テーブルへのFK依存）。
+依存関係:
+- 01 が完了していない状態で 02〜05 を実行してはならない（stations テーブルへのFK依存）
+- 06, 07 は 02 の後に実行する（town_crimes テーブルへの依存）
+
+## 年次データ追加の運用手順
+
+新しい年度の犯罪データを追加する際の手順。**この順序を厳守すること。**
+
+### 1. CSVファイル配置
+
+警視庁の「区市町村の町丁別、罪種別及び手口別認知件数」CSV を取得し、配置する:
+
+```
+pipeline/data/raw/metropolitan/
+├── H29.csv      # 2017年（平成29年）
+├── H30.csv      # 2018年
+├── H31.csv      # 2019年
+├── R2.csv       # 2020年
+├── R3.csv       # 2021年
+├── R4.csv       # 2022年
+├── R5.csv       # 2023年
+├── R6.csv       # 2024年
+└── R7/R7.11.csv # 2025年（令和7年・月次更新）
+```
+
+※ H29〜R4 は UTF-8 または cp932。エンコーディングは `_detect_encoding()` で自動判定される。
+
+### 2. CSV_FILES に年度を追加
+
+`pipeline/scripts/02_fetch_safety.py` の `CSV_FILES` dict にエントリを追加:
+
+```python
+CSV_FILES = {
+    2017: str(DATA_DIR / "metropolitan" / "H29.csv"),
+    # ... 既存年度 ...
+    2026: str(DATA_DIR / "metropolitan" / "R8.csv"),  # 新規追加
+}
+```
+
+### 3. 実行（4ステップ）
+
+```bash
+cd pipeline
+source .venv/bin/activate
+
+# Step 1: 犯罪データ投入 + 駅スコア算出（--year で単年指定可）
+python scripts/02_fetch_safety.py --year 2026
+
+# Step 2: name_en / score / rank 付与（全年分を一括処理）
+python scripts/06_enrich_areas.py
+
+# Step 3: centroid が NULL の行を GSI ジオコーディング
+python scripts/07_geocode_missing_areas.py
+
+# Step 4: SQL で centroid → lat/lng 抽出（Supabase ダッシュボードまたは MCP で実行）
+# ※ 02 は centroid(geography) を設定するが lat/lng は設定しないため必要
+UPDATE town_crimes
+SET lat = ST_Y(centroid::geometry), lng = ST_X(centroid::geometry)
+WHERE centroid IS NOT NULL AND lat IS NULL;
+```
+
+### 4. 検証
+
+```sql
+-- 各年のカバレッジ確認
+SELECT year, COUNT(*) as total,
+  COUNT(name_en) as has_name_en,
+  COUNT(score) as has_score,
+  COUNT(rank) as has_rank,
+  COUNT(lat) as has_lat
+FROM town_crimes GROUP BY year ORDER BY year;
+```
+
+期待値: name_en / score / rank は 100%、lat/lng は 99.5%+（「以下不詳」等の特殊エントリのみ NULL）
+
+### 既知の注意点
+
+- **Polygon → MultiPolygon**: `crime_parser.py` の `_find_parent_union` は `unary_union` の結果が Polygon になりうる。MultiPolygon に変換済み（修正済み）。
+- **06 の name_en 欠損**: `06_enrich_areas.py` は全行を UPSERT するが、ページネーションや処理の問題で一部 NULL が残る場合がある。SQL で他年度からコピーして補完する:
+  ```sql
+  UPDATE town_crimes t SET name_en = ref.name_en
+  FROM (SELECT DISTINCT area_name, name_en FROM town_crimes WHERE name_en IS NOT NULL) ref
+  WHERE t.area_name = ref.area_name AND t.name_en IS NULL;
+  ```
+- **rank の再計算**: SQL の window function が最も確実:
+  ```sql
+  UPDATE town_crimes t SET rank = sub.new_rank
+  FROM (
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY year ORDER BY total_crimes ASC, area_name ASC) as new_rank
+    FROM town_crimes
+  ) sub WHERE t.id = sub.id;
+  ```
 
 ## 共通パターン
 
@@ -43,7 +149,6 @@ from pathlib import Path
 # プロジェクトルートをパスに追加
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from config.settings import SUPABASE_URL, SUPABASE_KEY
 from lib.supabase_client import get_client
 
 logging.basicConfig(
@@ -125,25 +230,30 @@ def upsert_batch(client, table, records, batch_size=100):
 
 ### 02: 治安データ（警視庁 CSV）
 
-- CSVのエンコーディングは `Shift_JIS` の可能性が高い（`encoding='cp932'`で読む）
-- ヘッダ行が複数行にまたがる場合がある（`skiprows` で調整）
-- 町丁目名の表記ゆれに注意（全角/半角、丁目の漢数字/算用数字）
-- 駅への紐付け: 町丁目の代表点座標が必要 → 国土数値情報「位置参照情報」を補助データとして使う
-- スコア計算: 偏差値方式（平均50、標準偏差10）
-
-```python
-import numpy as np
-
-def calculate_safety_score(crimes_list):
-    arr = np.array(crimes_list)
-    mean = arr.mean()
-    std = arr.std()
-    if std == 0:
-        return [50.0] * len(crimes_list)
-    z_scores = (mean - arr) / std  # 犯罪が少ない = 高スコア
-    scores = 50 + 10 * z_scores
-    return np.clip(scores, 0, 100).tolist()
+**データフロー:**
 ```
+警視庁 CSV → crime_parser.py パース → town_crimes テーブル（町丁目レベル）
+                                      → safety_scores テーブル（駅レベル、市区町村集計）
+```
+
+**CSV仕様:**
+- エンコーディング: UTF-8 または cp932（`_detect_encoding()` で自動判定）
+- 町丁目名の表記ゆれ: `normalize_area_name()` で正規化（全角→半角、漢数字→算用数字、郡名・大字除去）
+- 集計行（「〜計」「合計」）は `_SKIP_PATTERNS` で自動除外
+- 市区町村のみの行も除外（町丁目レベルのみ投入）
+
+**ポリゴンマッチング:**
+1. 小地域境界 Shapefile（`r2ka13.shp`）から正規化名で完全一致
+2. 親エリア→子丁目の union フォールバック（例: 「昭島市福島町」→「昭島市福島町1丁目」+「2丁目」...）
+3. マッチ率は約 90%（残りは 07 で GSI ジオコーディング）
+
+**スコア計算:** 偏差値方式（`lib/normalizer.py`）
+- `50 + 10 * (x - mean) / std`、[0, 100] にクリップ
+- 犯罪件数を反転してから偏差値化（少ないほど高スコア）
+
+**テーブル構成:**
+- `town_crimes`: 町丁目×年単位。boundary/centroid は geography 型（本番）
+- `safety_scores`: 駅×年単位。town_crimes を市区町村レベルで集計して算出
 
 ### 03: 災害データ（不動産情報ライブラリ API）
 
@@ -166,6 +276,24 @@ def calculate_safety_score(crimes_list):
 );
 out count;
 ```
+
+## lib/ モジュール一覧
+
+| モジュール | 役割 |
+|-----------|------|
+| `supabase_client.py` | Supabase クライアント取得、`upsert_records()`, `select_all()` |
+| `normalizer.py` | 偏差値計算 `normalize_score()` |
+| `crime_parser.py` | 警視庁 CSV パース、町丁目名正規化、Shapefile 読み込み、ポリゴンマッチング |
+| `geo_utils.py` | 市区町村コード定数 `TOKYO_MUNICIPALITIES`、ローマ字変換 `romanize_station_name()`、GSI ジオコーディング `forward_geocode_gsi()` |
+| `estat_client.py` | e-Stat API クライアント |
+| `overpass_client.py` | OpenStreetMap Overpass API クライアント |
+
+## 現在のデータ規模（参考）
+
+- **stations**: 659 駅
+- **town_crimes**: ~45,700 行（9年分: 2017-2025、各年 ~5,000 町丁目）
+- **safety_scores**: ~5,931 行（659駅 × 9年）
+- **Shapefile マッチ率**: ~90%（残り ~10% は GSI ジオコーディングで補完）
 
 ## テスト
 

@@ -34,6 +34,12 @@ logger = logging.getLogger(__name__)
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 DEFAULT_SHP = str(DATA_DIR / "administrative_area" / "tokyo" / "r2ka13.shp")
 CSV_FILES = {
+    2017: str(DATA_DIR / "metropolitan" / "H29.csv"),
+    2018: str(DATA_DIR / "metropolitan" / "H30.csv"),
+    2019: str(DATA_DIR / "metropolitan" / "H31.csv"),
+    2020: str(DATA_DIR / "metropolitan" / "R2.csv"),
+    2021: str(DATA_DIR / "metropolitan" / "R3.csv"),
+    2022: str(DATA_DIR / "metropolitan" / "R4.csv"),
     2023: str(DATA_DIR / "metropolitan" / "R5.csv"),
     2024: str(DATA_DIR / "metropolitan" / "R6.csv"),
     2025: str(DATA_DIR / "metropolitan" / "R7" / "R7.11.csv"),
@@ -247,7 +253,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--shp-path", type=str, default=DEFAULT_SHP, help="境界Shapefileパス")
-    parser.add_argument("--year", type=int, choices=[2023, 2024, 2025], help="処理する年（省略時は全年）")
+    parser.add_argument("--year", type=int, choices=list(CSV_FILES.keys()), help="処理する年（省略時は全年）")
     parser.add_argument("--dry-run", action="store_true", help="DB に書き込まない")
     parser.add_argument("--limit", type=int, default=0, help="処理件数制限（デバッグ用）")
     parser.add_argument("--verbose", "-v", action="store_true", help="詳細ログを出力")
