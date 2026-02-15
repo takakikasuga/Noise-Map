@@ -1,10 +1,12 @@
 import Link from 'next/link';
-import { getStationListForSearch, getTopStations, getBottomStations } from '@/lib/db';
+import { getStationListForSearch, getStationListForMap, getTopStations, getBottomStations } from '@/lib/db';
 import { SearchBar } from '@/components/ui/SearchBar';
+import { OverviewMap } from '@/components/map/OverviewMap';
 
 export default async function HomePage() {
-  const [stations, topStations, bottomStations] = await Promise.all([
+  const [stations, mapStations, topStations, bottomStations] = await Promise.all([
     getStationListForSearch(),
+    getStationListForMap(),
     getTopStations(5),
     getBottomStations(5),
   ]);
@@ -78,10 +80,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 地図プレースホルダー */}
-      <section className="rounded-lg border bg-white p-8 text-center text-gray-400">
-        <p className="text-lg">地図機能は近日公開</p>
-        <p className="mt-1 text-sm">東京都全域の駅をマップ上で確認できるようになります</p>
+      {/* 東京都全域 駅マップ */}
+      <section className="rounded-lg border bg-white p-6">
+        <h2 className="mb-4 text-lg font-semibold">東京都 駅マップ</h2>
+        <p className="mb-4 text-sm text-gray-500">駅をクリックすると詳細ページに移動できます</p>
+        <OverviewMap stations={mapStations as { name: string; nameEn: string; lat: number; lng: number }[]} />
       </section>
     </div>
   );

@@ -100,6 +100,20 @@ export async function getStationHazard(stationId: string) {
 }
 
 /**
+ * 全駅の座標付きリスト（トップページ俯瞰マップ用）
+ */
+export async function getStationListForMap() {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('stations')
+    .select('name, name_en, lat, lng')
+    .order('name');
+
+  if (error) throw error;
+  return snakeToCamelArray(data ?? []);
+}
+
+/**
  * 検索オートコンプリート用の軽量駅リスト
  */
 export async function getStationListForSearch() {
