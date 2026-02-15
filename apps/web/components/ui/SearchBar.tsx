@@ -5,15 +5,23 @@ import { useRouter } from 'next/navigation';
 
 interface SearchBarProps {
   stations: { name: string; nameEn: string }[];
+  areas?: { areaName: string; nameEn: string }[];
+  cities?: { name: string; nameEn: string }[];
 }
 
+type SearchResult = {
+  label: string;
+  nameEn: string;
+  type: 'city' | 'station' | 'area';
+};
+
 /**
- * 駅名検索コンポーネント
+ * 駅名・エリア名検索コンポーネント
  * テキスト入力 + サジェスト機能
  */
-export function SearchBar({ stations }: SearchBarProps) {
+export function SearchBar({ stations, areas = [], cities = [] }: SearchBarProps) {
   const [query, setQuery] = useState('');
-  const [filtered, setFiltered] = useState<{ name: string; nameEn: string }[]>([]);
+  const [filtered, setFiltered] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -27,20 +35,59 @@ export function SearchBar({ stations }: SearchBarProps) {
         setShowDropdown(false);
         return;
       }
-      const matches = stations
+
+      const results: SearchResult[] = [];
+
+      // 市区町村を検索（前方一致）— 住環境検索の主導線として最上位
+      const cityMatches = cities
+        .filter((c) => c.name.startsWith(value))
+        .slice(0, 5)
+        .map((c) => ({
+          label: c.name,
+          nameEn: c.nameEn,
+          type: 'city' as const,
+        }));
+      results.push(...cityMatches);
+
+      // 駅を検索（前方一致）
+      const stationMatches = stations
         .filter((s) => s.name.startsWith(value))
-        .slice(0, 10);
-      setFiltered(matches);
+        .slice(0, 5)
+        .map((s) => ({
+          label: s.name,
+          nameEn: s.nameEn,
+          type: 'station' as const,
+        }));
+      results.push(...stationMatches);
+
+      // エリアを検索（部分一致）
+      const areaMatches = areas
+        .filter((a) => a.areaName.includes(value))
+        .slice(0, 5)
+        .map((a) => ({
+          label: a.areaName,
+          nameEn: a.nameEn,
+          type: 'area' as const,
+        }));
+      results.push(...areaMatches);
+
+      setFiltered(results);
       setShowDropdown(true);
     },
-    [stations],
+    [stations, areas, cities],
   );
 
   const handleSelect = useCallback(
-    (nameEn: string) => {
+    (result: SearchResult) => {
       setShowDropdown(false);
       setQuery('');
-      router.push(`/station/${nameEn}`);
+      if (result.type === 'city') {
+        router.push(`/city/${result.nameEn}`);
+      } else if (result.type === 'station') {
+        router.push(`/station/${result.nameEn}`);
+      } else {
+        router.push(`/area/${result.nameEn}`);
+      }
     },
     [router],
   );
@@ -61,6 +108,10 @@ export function SearchBar({ stations }: SearchBarProps) {
     }
   }, [query]);
 
+  const cityResults = filtered.filter((r) => r.type === 'city');
+  const stationResults = filtered.filter((r) => r.type === 'station');
+  const areaResults = filtered.filter((r) => r.type === 'area');
+
   return (
     <div className="relative">
       <input
@@ -69,21 +120,62 @@ export function SearchBar({ stations }: SearchBarProps) {
         onChange={handleChange}
         onBlur={handleBlur}
         onFocus={handleFocus}
-        placeholder="駅名を入力して検索..."
+        placeholder="駅名・エリア名を入力して検索..."
         className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
       />
       {showDropdown && query.trim() !== '' && (
-        <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        <ul className="absolute z-10 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
           {filtered.length > 0 ? (
-            filtered.map((station) => (
-              <li
-                key={station.nameEn}
-                onMouseDown={() => handleSelect(station.nameEn)}
-                className="cursor-pointer px-4 py-2 hover:bg-blue-50"
-              >
-                {station.name}
-              </li>
-            ))
+            <>
+              {cityResults.length > 0 && (
+                <>
+                  <li className="px-4 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
+                    市区町村
+                  </li>
+                  {cityResults.map((r) => (
+                    <li
+                      key={`city-${r.nameEn}`}
+                      onMouseDown={() => handleSelect(r)}
+                      className="cursor-pointer px-4 py-2 hover:bg-blue-50"
+                    >
+                      {r.label}
+                    </li>
+                  ))}
+                </>
+              )}
+              {stationResults.length > 0 && (
+                <>
+                  <li className="px-4 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
+                    駅
+                  </li>
+                  {stationResults.map((r) => (
+                    <li
+                      key={`station-${r.nameEn}`}
+                      onMouseDown={() => handleSelect(r)}
+                      className="cursor-pointer px-4 py-2 hover:bg-blue-50"
+                    >
+                      {r.label}駅
+                    </li>
+                  ))}
+                </>
+              )}
+              {areaResults.length > 0 && (
+                <>
+                  <li className="px-4 py-1 text-xs font-semibold text-gray-500 bg-gray-50">
+                    エリア
+                  </li>
+                  {areaResults.map((r) => (
+                    <li
+                      key={`area-${r.nameEn}`}
+                      onMouseDown={() => handleSelect(r)}
+                      className="cursor-pointer px-4 py-2 hover:bg-blue-50"
+                    >
+                      <span>{r.label}</span>
+                    </li>
+                  ))}
+                </>
+              )}
+            </>
           ) : (
             <li className="px-4 py-2 italic text-gray-400">候補なし</li>
           )}

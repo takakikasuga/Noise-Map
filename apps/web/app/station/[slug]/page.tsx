@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import type { SafetyScore } from '@hikkoshinoise/shared';
 import type { VibeData } from '@hikkoshinoise/shared';
 import type { HazardData } from '@hikkoshinoise/shared';
+import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
 import { ScoreGauge } from '@hikkoshinoise/ui';
 import {
   getAllStations,
@@ -38,9 +39,20 @@ export async function generateMetadata({
   const name = station.name as string;
   const municipalityName = station.municipalityName as string;
 
+  const title = `${name}駅の治安・住環境リスク`;
+  const description = `${name}駅（${municipalityName}）周辺の治安・災害リスク・街の雰囲気を客観データで評価。犯罪件数、人口構成、周辺施設データを掲載。`;
+
   return {
-    title: `${name}駅の住環境リスク`,
-    description: `${name}駅（${municipalityName}）周辺の治安・災害リスク・街の雰囲気を客観データで評価。犯罪件数、人口構成、周辺施設データを掲載。`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `/station/${slug}`,
+    },
+    alternates: {
+      canonical: `/station/${slug}`,
+    },
   };
 }
 
@@ -89,86 +101,128 @@ export default async function StationPage({
 
   const latestSafety = safetyForClient.length > 0 ? safetyForClient[0] : null;
 
+  // JSON-LD 構造化データ
+  const citySlug = TOKYO_MUNICIPALITIES.find((m) => m.name === municipalityName)?.nameEn;
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Place',
+    name: `${name}駅`,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: municipalityName,
+      addressRegion: '東京都',
+      addressCountry: 'JP',
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: lat,
+      longitude: lng,
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://hikkoshinoise.com' },
+      ...(citySlug
+        ? [{ '@type': 'ListItem', position: 2, name: municipalityName, item: `https://hikkoshinoise.com/city/${citySlug}` }]
+        : []),
+      { '@type': 'ListItem', position: citySlug ? 3 : 2, name: `${name}駅` },
+    ],
+  };
+
   return (
-    <div className="space-y-8">
-      {/* 駅ヘッダー */}
-      <section>
-        <h1 className="text-3xl font-bold">{name}駅</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-            {municipalityName}
-          </span>
-          {lines.map((line) => (
-            <span
-              key={line}
-              className="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700"
-            >
-              {line}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <div className="space-y-8">
+        {/* 駅ヘッダー */}
+        <section>
+          <h1 className="text-3xl font-bold">{name}駅</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+              {municipalityName}
             </span>
-          ))}
-        </div>
-      </section>
-
-      {/* スコアサマリー */}
-      <section className="rounded-lg border bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold">ノイズ偏差値</h2>
-        <div className="flex flex-wrap gap-8 justify-center">
-          {latestSafety && (
-            <ScoreGauge score={latestSafety.score} label="治安" size="lg" />
-          )}
-          {hazardData && (
-            <ScoreGauge
-              score={(hazardData as unknown as HazardData).score}
-              label="災害"
-              size="lg"
-            />
-          )}
-        </div>
-        {!latestSafety && !hazardData && (
-          <p className="text-center text-gray-400">偏差値データは準備中です</p>
-        )}
-      </section>
-
-      {/* 治安セクション */}
-      <section className="rounded-lg border bg-white p-6">
-        {safetyForClient.length > 0 ? (
-          <SafetySection data={safetyForClient} />
-        ) : (
-          <div>
-            <h2 className="text-xl font-semibold">治安</h2>
-            <p className="mt-2 text-gray-400">治安データは準備中です</p>
+            {lines.map((line) => (
+              <span
+                key={line}
+                className="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700"
+              >
+                {line}
+              </span>
+            ))}
           </div>
-        )}
-      </section>
+        </section>
 
-      {/* 災害リスクセクション */}
-      <section className="rounded-lg border bg-white p-6">
-        <HazardSection data={hazardData as unknown as HazardData | null} />
-      </section>
-
-      {/* 雰囲気セクション */}
-      <section className="rounded-lg border bg-white p-6">
-        {vibeData ? (
-          <VibeSection data={vibeData as unknown as VibeData} />
-        ) : (
-          <div>
-            <h2 className="text-xl font-semibold">街の雰囲気</h2>
-            <p className="mt-2 text-gray-400">雰囲気データは準備中です</p>
+        {/* スコアサマリー */}
+        <section className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold">ノイズ偏差値</h2>
+          <div className="flex flex-wrap gap-8 justify-center">
+            {latestSafety && (
+              <ScoreGauge score={latestSafety.score} label="治安" size="lg" />
+            )}
+            {hazardData && (
+              <ScoreGauge
+                score={(hazardData as unknown as HazardData).score}
+                label="災害"
+                size="lg"
+              />
+            )}
           </div>
-        )}
-      </section>
+          {!latestSafety && !hazardData && (
+            <p className="text-center text-gray-400">偏差値データは準備中です</p>
+          )}
+        </section>
 
-      {/* 周辺マップ */}
-      <section className="rounded-lg border bg-white p-6">
-        <h2 className="mb-4 text-xl font-semibold">周辺マップ</h2>
-        <StationMap lat={lat} lng={lng} stationName={name} />
-      </section>
+        {/* 治安セクション */}
+        <section className="rounded-lg border bg-white p-6">
+          {safetyForClient.length > 0 ? (
+            <SafetySection data={safetyForClient} />
+          ) : (
+            <div>
+              <h2 className="text-xl font-semibold">治安</h2>
+              <p className="mt-2 text-gray-400">治安データは準備中です</p>
+            </div>
+          )}
+        </section>
 
-      {/* 口コミプレースホルダー */}
-      <section className="rounded-lg border bg-white p-6 text-center text-gray-400">
-        <h2 className="text-xl font-semibold text-gray-900">住民の声</h2>
-        <p className="mt-2">口コミ機能は近日公開</p>
-      </section>
-    </div>
+        {/* 災害リスクセクション */}
+        <section className="rounded-lg border bg-white p-6">
+          <HazardSection data={hazardData as unknown as HazardData | null} />
+        </section>
+
+        {/* 雰囲気セクション */}
+        <section className="rounded-lg border bg-white p-6">
+          {vibeData ? (
+            <VibeSection data={vibeData as unknown as VibeData} />
+          ) : (
+            <div>
+              <h2 className="text-xl font-semibold">街の雰囲気</h2>
+              <p className="mt-2 text-gray-400">雰囲気データは準備中です</p>
+            </div>
+          )}
+        </section>
+
+        {/* 周辺マップ */}
+        <section className="rounded-lg border bg-white p-6">
+          <h2 className="mb-4 text-xl font-semibold">周辺マップ</h2>
+          <StationMap lat={lat} lng={lng} stationName={name} />
+        </section>
+
+        {/* 口コミプレースホルダー */}
+        <section className="rounded-lg border bg-white p-6 text-center text-gray-400">
+          <h2 className="text-xl font-semibold text-gray-900">住民の声</h2>
+          <p className="mt-2">口コミ機能は近日公開</p>
+        </section>
+      </div>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import './globals.css';
 
 // サイト共通メタデータ
 export const metadata: Metadata = {
+  metadataBase: new URL('https://hikkoshinoise.com'),
   title: {
     default: 'ヒッコシノイズ',
     template: '%s | ヒッコシノイズ',
@@ -27,6 +28,7 @@ export default function RootLayout({
             </a>
             <nav className="flex gap-4 text-sm">
               <a href="/" className="hover:text-blue-600">トップ</a>
+              <a href="/#areas" className="hover:text-blue-600">エリア</a>
               <a href="/compare" className="hover:text-blue-600">比較</a>
             </nav>
           </div>

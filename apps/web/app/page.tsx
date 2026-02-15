@@ -1,14 +1,20 @@
 import Link from 'next/link';
-import { getStationListForSearch, getStationListForMap, getTopStations, getBottomStations } from '@/lib/db';
+import { TOKYO_MUNICIPALITIES } from '@hikkoshinoise/shared';
+import { getStationListForSearch, getStationListForMap, getTopStations, getBottomStations, getAreaListForSearch } from '@/lib/db';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { OverviewMap } from '@/components/map/OverviewMap';
+import { AreaMap } from '@/components/map/AreaMap';
+
+const WARDS = TOKYO_MUNICIPALITIES.filter((m) => m.name.endsWith('区'));
+const TAMA = TOKYO_MUNICIPALITIES.filter((m) => !m.name.endsWith('区'));
 
 export default async function HomePage() {
-  const [stations, mapStations, topStations, bottomStations] = await Promise.all([
+  const [stations, mapStations, topStations, bottomStations, areas] = await Promise.all([
     getStationListForSearch(),
     getStationListForMap(),
     getTopStations(5),
     getBottomStations(5),
+    getAreaListForSearch(),
   ]);
 
   return (
@@ -22,13 +28,52 @@ export default async function HomePage() {
           東京都の住環境リスクを、忖度なく可視化する。
         </p>
         <p className="mt-2 text-sm text-gray-500">
-          約{stations.length}駅の治安・災害・街の雰囲気を客観データで評価
+          約{stations.length}駅 + 約{areas.length}エリアの治安・災害・街の雰囲気を客観データで評価
         </p>
       </section>
 
       {/* 検索バー */}
       <section className="mx-auto max-w-xl">
-        <SearchBar stations={stations as { name: string; nameEn: string }[]} />
+        <SearchBar
+          stations={stations as { name: string; nameEn: string }[]}
+          areas={areas as { areaName: string; nameEn: string }[]}
+          cities={TOKYO_MUNICIPALITIES.map((m) => ({ name: m.name, nameEn: m.nameEn }))}
+        />
+      </section>
+
+      {/* エリアから探す */}
+      <section id="areas" className="rounded-lg border bg-white p-6">
+        <h2 className="mb-6 text-lg font-semibold">エリアから探す</h2>
+        <div className="space-y-6">
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-gray-500">23区</h3>
+            <div className="flex flex-wrap gap-2">
+              {WARDS.map((m) => (
+                <Link
+                  key={m.nameEn}
+                  href={`/city/${m.nameEn}`}
+                  className="rounded-full border px-3 py-1.5 text-sm transition hover:bg-blue-50 hover:border-blue-300"
+                >
+                  {m.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-gray-500">多摩地域</h3>
+            <div className="flex flex-wrap gap-2">
+              {TAMA.map((m) => (
+                <Link
+                  key={m.nameEn}
+                  href={`/city/${m.nameEn}`}
+                  className="rounded-full border px-3 py-1.5 text-sm transition hover:bg-blue-50 hover:border-blue-300"
+                >
+                  {m.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ランキングセクション */}
@@ -85,6 +130,13 @@ export default async function HomePage() {
         <h2 className="mb-4 text-lg font-semibold">東京都 駅マップ</h2>
         <p className="mb-4 text-sm text-gray-500">駅をクリックすると詳細ページに移動できます</p>
         <OverviewMap stations={mapStations as { name: string; nameEn: string; lat: number; lng: number }[]} />
+      </section>
+
+      {/* 東京都全域 エリアマップ */}
+      <section className="rounded-lg border bg-white p-6">
+        <h2 className="mb-4 text-lg font-semibold">東京都 治安エリアマップ</h2>
+        <p className="mb-4 text-sm text-gray-500">エリアをクリックすると偏差値と詳細ページを確認できます</p>
+        <AreaMap />
       </section>
     </div>
   );

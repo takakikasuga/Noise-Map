@@ -180,3 +180,193 @@ export async function getBottomStations(limit: number = 5) {
       };
     });
 }
+
+/**
+ * 全エリアを取得（generateStaticParams 用）
+ */
+export async function getAllAreas() {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('town_crimes')
+    .select('name_en')
+    .eq('year', 2025)
+    .not('name_en', 'is', null)
+    .order('name_en');
+
+  if (error) throw error;
+
+  // DISTINCT: name_en で重複を排除
+  const seen = new Set<string>();
+  const unique = (data ?? []).filter((d) => {
+    if (seen.has(d.name_en)) return false;
+    seen.add(d.name_en);
+    return true;
+  });
+  return snakeToCamelArray(unique);
+}
+
+/**
+ * スラッグ（name_en）でエリアを1件取得（最新年）
+ */
+export const getAreaBySlug = cache(async function getAreaBySlug(slug: string) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('town_crimes')
+    .select('*')
+    .eq('name_en', slug)
+    .eq('year', 2025)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  if (!data) return null;
+  return snakeToCamel(data);
+});
+
+/**
+ * エリアの治安データを取得（複数年分）
+ */
+export async function getAreaSafety(nameEn: string) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('town_crimes')
+    .select('*')
+    .eq('name_en', nameEn)
+    .order('year', { ascending: false });
+
+  if (error) throw error;
+
+  const sorted = snakeToCamelArray(data ?? []);
+
+  // previousYearTotal を計算（前年の totalCrimes）
+  return sorted.map((d, i) => ({
+    ...d,
+    previousYearTotal:
+      i < sorted.length - 1
+        ? (sorted[i + 1] as { totalCrimes: number }).totalCrimes
+        : null,
+  }));
+}
+
+/**
+ * 検索オートコンプリート用のエリアリスト
+ */
+export async function getAreaListForSearch() {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('town_crimes')
+    .select('area_name, name_en')
+    .eq('year', 2025)
+    .not('name_en', 'is', null)
+    .order('area_name');
+
+  if (error) throw error;
+  return snakeToCamelArray(data ?? []);
+}
+
+/**
+ * 市区町村内の駅一覧（治安スコア付き）
+ */
+export async function getStationsByMunicipality(municipalityName: string) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('stations')
+    .select('id, name, name_en, lat, lng, lines, municipality_name')
+    .eq('municipality_name', municipalityName)
+    .order('name');
+
+  if (error) throw error;
+
+  const stations = snakeToCamelArray(data ?? []);
+
+  // 各駅の最新治安スコアを取得
+  const stationIds = (data ?? []).map((s) => s.id);
+  if (stationIds.length === 0) return [];
+
+  const { data: scores, error: scoresError } = await supabase
+    .from('safety_scores')
+    .select('station_id, score, rank')
+    .in('station_id', stationIds)
+    .eq('year', 2025);
+
+  if (scoresError) throw scoresError;
+
+  const scoreMap = new Map<string, { score: number; rank: number | null }>();
+  for (const s of scores ?? []) {
+    scoreMap.set(s.station_id, { score: s.score, rank: s.rank });
+  }
+
+  return stations.map((s) => ({
+    ...s,
+    safetyScore: scoreMap.get(s.id as string)?.score ?? null,
+    safetyRank: scoreMap.get(s.id as string)?.rank ?? null,
+  }));
+}
+
+/**
+ * 市区町村内のエリア一覧（最新年、スコア順）
+ */
+export async function getAreasByMunicipality(municipalityName: string) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('town_crimes')
+    .select('area_name, name_en, score, rank, total_crimes')
+    .eq('municipality_name', municipalityName)
+    .eq('year', 2025)
+    .not('name_en', 'is', null)
+    .order('score', { ascending: false });
+
+  if (error) throw error;
+  return snakeToCamelArray(data ?? []);
+}
+
+/**
+ * 市区町村の犯罪統計集計（年別）
+ */
+export async function getMunicipalityCrimeStats(municipalityName: string) {
+  const supabase = createSupabaseClient();
+  const { data, error } = await supabase
+    .from('town_crimes')
+    .select('year, total_crimes, crimes_violent, crimes_assault, crimes_theft, crimes_intellectual, crimes_other')
+    .eq('municipality_name', municipalityName);
+
+  if (error) throw error;
+
+  // 年ごとに集計
+  const byYear = new Map<number, {
+    year: number;
+    totalCrimes: number;
+    crimesViolent: number;
+    crimesAssault: number;
+    crimesTheft: number;
+    crimesIntellectual: number;
+    crimesOther: number;
+  }>();
+
+  for (const row of data ?? []) {
+    const year = row.year;
+    const existing = byYear.get(year) ?? {
+      year,
+      totalCrimes: 0,
+      crimesViolent: 0,
+      crimesAssault: 0,
+      crimesTheft: 0,
+      crimesIntellectual: 0,
+      crimesOther: 0,
+    };
+    existing.totalCrimes += row.total_crimes ?? 0;
+    existing.crimesViolent += row.crimes_violent ?? 0;
+    existing.crimesAssault += row.crimes_assault ?? 0;
+    existing.crimesTheft += row.crimes_theft ?? 0;
+    existing.crimesIntellectual += row.crimes_intellectual ?? 0;
+    existing.crimesOther += row.crimes_other ?? 0;
+    byYear.set(year, existing);
+  }
+
+  const sorted = [...byYear.values()].sort((a, b) => b.year - a.year);
+
+  // previousYearTotal を計算
+  return sorted.map((d, i) => ({
+    ...d,
+    previousYearTotal: i < sorted.length - 1 ? sorted[i + 1].totalCrimes : null,
+  }));
+}

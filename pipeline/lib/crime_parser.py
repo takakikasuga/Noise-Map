@@ -193,24 +193,86 @@ def load_boundaries(shp_path: str) -> dict[str, dict[str, Any]]:
     return boundaries
 
 
+def _find_parent_union(
+    area_name: str,
+    municipality_name: str,
+    boundaries: dict[str, dict[str, Any]],
+) -> Optional[dict[str, Any]]:
+    """
+    親エリア→子丁目の union フォールバック。
+
+    例: CSV「昭島市福島町」→ Shapefile「昭島市福島町1丁目」「昭島市福島町2丁目」...
+    子ポリゴンを全て union して centroid を返す。
+    """
+    area_part = area_name[len(municipality_name):]
+    children = [
+        k for k in boundaries
+        if k.startswith(area_name) and k != area_name
+    ]
+    if not children:
+        return None
+
+    from shapely import wkt as shapely_wkt
+
+    polys = []
+    for child_key in children:
+        child = boundaries[child_key]
+        try:
+            polys.append(shapely_wkt.loads(child["boundary_wkt"]))
+        except Exception:
+            continue
+
+    if not polys:
+        return None
+
+    merged = unary_union(polys)
+    centroid = merged.centroid
+    return {
+        "centroid_wkt": f"POINT({centroid.x} {centroid.y})",
+        "boundary_wkt": merged.wkt,
+    }
+
+
 def attach_boundaries(
     records: list[dict[str, Any]],
     boundaries: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """
     犯罪レコードに境界ポリゴンとcentroidを付与。
+
+    マッチング順序:
+    1. 正規化名で完全一致
+    2. 親エリア→子丁目の union フォールバック
     """
-    matched = 0
+    matched_exact = 0
+    matched_parent = 0
+
     for rec in records:
+        # 1. 完全一致
         geo = boundaries.get(rec["area_name"])
         if geo:
             rec["centroid"] = geo["centroid_wkt"]
             rec["boundary"] = geo["boundary_wkt"]
-            matched += 1
-        else:
-            rec["centroid"] = None
-            rec["boundary"] = None
+            matched_exact += 1
+            continue
 
-    rate = matched / len(records) * 100 if records else 0
-    logger.info("ポリゴンマッチ: %d / %d (%.1f%%)", matched, len(records), rate)
+        # 2. 親→子 union
+        geo = _find_parent_union(
+            rec["area_name"], rec["municipality_name"], boundaries
+        )
+        if geo:
+            rec["centroid"] = geo["centroid_wkt"]
+            rec["boundary"] = geo["boundary_wkt"]
+            matched_parent += 1
+            continue
+
+        rec["centroid"] = None
+        rec["boundary"] = None
+
+    total = matched_exact + matched_parent
+    rate = total / len(records) * 100 if records else 0
+    logger.info(
+        "ポリゴンマッチ: %d / %d (%.1f%%) [完全一致=%d, 親→子union=%d]",
+        total, len(records), rate, matched_exact, matched_parent,
+    )
     return records

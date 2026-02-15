@@ -258,6 +258,40 @@ def batch_reverse_geocode(
     return result
 
 
+# ── 順ジオコーディング（住所 → 座標） ──────────────────
+
+
+def forward_geocode_gsi(address: str) -> tuple[float, float] | None:
+    """
+    GSI（国土地理院）住所検索 API で住所から緯度・経度を取得。
+
+    Args:
+        address: 検索する住所文字列（例: "東京都千代田区一番町"）
+
+    Returns:
+        (lat, lng) or None
+    """
+    url = "https://msearch.gsi.go.jp/address-search/AddressSearch"
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, params={"q": address}, timeout=10)
+            resp.raise_for_status()
+            results = resp.json()
+            if results and len(results) > 0:
+                coords = results[0].get("geometry", {}).get("coordinates")
+                if coords and len(coords) == 2:
+                    lng, lat = coords[0], coords[1]
+                    return lat, lng
+            return None
+        except requests.RequestException as e:
+            if attempt == 2:
+                logger.debug("順ジオコーディング失敗 (%s): %s", address, e)
+                return None
+            wait = 2 ** attempt
+            time.sleep(wait)
+    return None
+
+
 # ── 後方互換（他スクリプトから参照される可能性） ──────────
 
 

@@ -29,9 +29,11 @@ interface SafetyData {
 
 interface SafetySectionProps {
   data: SafetyData[];
+  totalCount?: number;
+  entityLabel?: string;
 }
 
-export function SafetySection({ data }: SafetySectionProps) {
+export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: SafetySectionProps) {
   const sorted = [...data].sort((a, b) => b.year - a.year);
   const latestYear = sorted[0]?.year ?? new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(latestYear);
@@ -63,7 +65,7 @@ export function SafetySection({ data }: SafetySectionProps) {
       <div className="flex items-center gap-6">
         <ScoreGauge score={selected.score} label="治安偏差値" />
         {selected.rank != null && (
-          <p className="text-sm text-gray-600">659駅中 <span className="font-bold text-lg">{selected.rank}</span>位</p>
+          <p className="text-sm text-gray-600">{totalCount}{entityLabel}中 <span className="font-bold text-lg">{selected.rank}</span>位</p>
         )}
       </div>
 
