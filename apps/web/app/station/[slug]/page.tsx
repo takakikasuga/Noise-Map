@@ -15,7 +15,7 @@ import { SafetySection } from '@/components/station/SafetySection';
 import { HazardSection } from '@/components/station/HazardSection';
 import { NearbyAreasSection } from '@/components/station/NearbyAreasSection';
 import { StationMap } from '@/components/map/StationMap';
-import { UgcSection } from '@/components/ugc/UgcSection';
+import { UgcList } from '@/components/ugc/UgcList';
 
 /** SSG: 全駅のスラッグを生成 */
 export async function generateStaticParams() {
@@ -168,10 +168,13 @@ export default async function StationPage({
           )}
         </section>
 
-        {/* 住民の声（UGC） — スコア直後に配置し投稿率を最大化 */}
+        {/* 住民の声（閲覧のみ） */}
         <section className="rounded-lg border bg-white p-6">
-          <h2 className="mb-4 text-xl font-semibold">住民の声</h2>
-          <UgcSection nearbyAreas={nearbyAreas as { areaName: string; nameEn: string }[]} />
+          <h2 className="mb-4 text-xl font-semibold">周辺の口コミ</h2>
+          <UgcList
+            areaNameEns={(nearbyAreas as { nameEn: string }[]).map((a) => a.nameEn)}
+            refreshKey={0}
+          />
         </section>
 
         {/* 周辺エリアの治安（丁目別犯罪ランキング） */}
