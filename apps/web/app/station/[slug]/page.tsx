@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { SafetyScore } from '@hikkoshimap/shared';
-import type { VibeData } from '@hikkoshimap/shared';
 import type { HazardData } from '@hikkoshimap/shared';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
 import { ScoreBadge } from '@hikkoshimap/ui';
@@ -9,13 +8,11 @@ import {
   getAllStations,
   getStationBySlug,
   getStationSafety,
-  getStationVibe,
   getStationHazard,
   getNearbyAreas,
 } from '@/lib/db';
 import { SafetySection } from '@/components/station/SafetySection';
 import { HazardSection } from '@/components/station/HazardSection';
-import { VibeSection } from '@/components/station/VibeSection';
 import { NearbyAreasSection } from '@/components/station/NearbyAreasSection';
 import { StationMap } from '@/components/map/StationMap';
 import { UgcSection } from '@/components/ugc/UgcSection';
@@ -43,7 +40,7 @@ export async function generateMetadata({
   const municipalityName = station.municipalityName as string;
 
   const title = `${name}駅の治安・住環境リスク`;
-  const description = `${name}駅（${municipalityName}）周辺の治安・災害リスク・街の雰囲気を客観データで評価。犯罪件数、人口構成、周辺施設データを掲載。`;
+  const description = `${name}駅（${municipalityName}）周辺の治安・災害リスクを客観データで評価。犯罪件数・災害リスクデータを掲載。`;
 
   return {
     title,
@@ -73,9 +70,8 @@ export default async function StationPage({
 
   const stationId = station.id as string;
 
-  const [safetyData, vibeData, hazardData, nearbyAreas] = await Promise.all([
+  const [safetyData, hazardData, nearbyAreas] = await Promise.all([
     getStationSafety(stationId),
-    getStationVibe(stationId),
     getStationHazard(stationId),
     getNearbyAreas(station.lat as number, station.lng as number),
   ]);
@@ -200,17 +196,6 @@ export default async function StationPage({
           <HazardSection data={hazardData as unknown as HazardData | null} />
         </section>
 
-        {/* 雰囲気セクション */}
-        <section className="rounded-lg border bg-white p-6">
-          {vibeData ? (
-            <VibeSection data={vibeData as unknown as VibeData} />
-          ) : (
-            <div>
-              <h2 className="text-xl font-semibold">街の雰囲気</h2>
-              <p className="mt-2 text-gray-400">雰囲気データは準備中です</p>
-            </div>
-          )}
-        </section>
 
         {/* 周辺マップ */}
         <section className="rounded-lg border bg-white p-6">

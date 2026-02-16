@@ -3,17 +3,23 @@
 ## 全体フロー
 
 ```
-01_fetch_stations.py   国土数値情報GML → stations テーブル
+00_build_area_master.py  Shapefile → areas テーブル（丁目マスタ）
         ↓
-02_fetch_safety.py     警視庁CSV → 駅紐付け → safety_scores テーブル
+01_fetch_stations.py     国土数値情報GML → stations テーブル
         ↓
-03_fetch_hazard.py     不動産情報ライブラリAPI → hazard_data テーブル
+02_fetch_safety.py       警視庁CSV → town_crimes テーブル（丁目単位）
         ↓
-04_fetch_vibe.py       e-Stat API + Overpass API → vibe_data テーブル
+03_fetch_hazard.py       不動産情報ライブラリAPI → hazard_data テーブル
         ↓
-05_calculate_scores.py 全駅スコア再計算・ランキング更新
+04_fetch_vibe.py         e-Stat 小地域集計 + Overpass API → area_vibe_data テーブル（丁目単位）
         ↓
-next build             800ページSSG生成 → Vercel deploy
+05_calculate_scores.py   全駅スコア再計算・ランキング更新
+        ↓
+06_enrich_areas.py       town_crimes にスラッグ・偏差値・ランク付与
+        ↓
+07_geocode_missing_areas.py  NULL centroid を補完（親union + GSI API）
+        ↓
+next build               SSGページ生成 → Vercel deploy
 ```
 
 更新頻度: Safety＝月次（警視庁データ更新に合わせて）、Hazard/Vibe＝年次。
@@ -146,27 +152,34 @@ score = clip(deviation, 0, 100)
 
 ---
 
-## 3. Vibe レイヤー
+## 3. Vibe レイヤー（丁目単位）
 
 ### データソース（3種）
 
-#### (a) e-Stat API — 人口統計
+#### (a) e-Stat API — 人口統計（小地域集計）
 - URL: https://www.e-stat.go.jp/api/
-- 取得データ: 区市町村別の年齢別人口、世帯構成、昼間人口比率
+- 取得データ: 丁目レベルの年齢別人口、世帯構成（国勢調査 小地域集計）
+- 昼夜間人口比率は市区町村レベルのみ（丁目にフォールバック）
 - 即時APIキー発行
+
+| データ | statsDataId | 用途 |
+|--------|-------------|------|
+| 年齢（5歳階級）別人口 | `8003006792` | 若年・ファミリー・高齢者比率 |
+| 世帯人員別一般世帯数 | `8003006803` | 単身世帯比率 |
+| 昼夜間人口比 | `0003454499` | 繁華街/ベッドタウン判定 |
 
 #### (b) OpenStreetMap Overpass API — 施設密度
 - 無料・申請不要
-- 取得データ: 駅から半径1km圏内の飲食店・コンビニ・公園・学校・病院の件数
+- 取得データ: 丁目ポリゴン内の飲食店・コンビニ・公園・学校・病院の件数
 
 #### (c) UGC口コミ — ユーザー投稿
 - Supabase に直接投稿
 - MVP段階ではNLP処理なし（テキストそのまま保存・表示）
 
 ### 処理フロー
-1. e-Stat: 年齢分布 → 若者多い/ファミリー層/高齢者多い を分類
-2. e-Stat: 昼間人口比率 → ベッドタウン/繁華街 を判定
-3. OSM: 施設カウント → タグ自動生成
+1. e-Stat 小地域集計: 丁目別の年齢分布 → 若者多い/ファミリー層/高齢者多い を分類
+2. e-Stat: 昼間人口比率（市区町村レベル） → ベッドタウン/繁華街 を判定
+3. OSM Overpass: 丁目ポリゴン内の施設カウント → タグ自動生成
 
 ### タグ生成ルール（ルールベース）
 ```
@@ -180,11 +193,11 @@ park_count > 5 → 「緑豊か」
 single_ratio > 0.5 → 「一人暮らし向き」
 ```
 
-### スキーマ: vibe_data
+### スキーマ: area_vibe_data（丁目単位）
 | カラム | 型 | 説明 |
 |--------|-----|------|
 | id | UUID | PK |
-| station_id | UUID | FK → stations (UNIQUE) |
+| area_name | TEXT | 丁目名（UNIQUE） |
 | population_young_ratio | FLOAT | 若年層比率 |
 | population_family_ratio | FLOAT | ファミリー層比率 |
 | population_elderly_ratio | FLOAT | 高齢者比率 |
@@ -197,6 +210,17 @@ single_ratio > 0.5 → 「一人暮らし向き」
 | hospital_count | INT | 病院数 |
 | tags | TEXT[] | 自動生成タグ |
 | updated_at | TIMESTAMPTZ | 更新日時 |
+
+### スキーマ: areas（丁目マスタ）
+| カラム | 型 | 説明 |
+|--------|-----|------|
+| id | UUID | PK |
+| area_name | TEXT | 丁目名（UNIQUE） |
+| municipality_code | TEXT | JIS 6桁市区町村コード |
+| municipality_name | TEXT | 市区町村名 |
+| boundary | GEOGRAPHY(POLYGON, 4326) | ポリゴン境界 |
+| centroid | GEOGRAPHY(POINT, 4326) | 重心座標 |
+| created_at | TIMESTAMPTZ | 作成日時 |
 
 ### スキーマ: ugc_posts
 | カラム | 型 | 説明 |
@@ -213,7 +237,7 @@ single_ratio > 0.5 → 「一人暮らし向き」
 
 ## RLS（Row Level Security）ポリシー
 
-全テーブル（stations, safety_scores, hazard_data, vibe_data, ugc_posts）に対して:
+全テーブル（stations, safety_scores, hazard_data, area_vibe_data, areas, town_crimes, ugc_posts）に対して:
 - **SELECT**: 全員許可（公開データ）
 - **INSERT**: ugc_posts のみ全員許可（口コミ投稿）
 - **UPDATE/DELETE**: service_role キーのみ（管理者・パイプライン）

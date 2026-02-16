@@ -51,9 +51,9 @@ def upsert_town_crimes(records: list[dict], dry_run: bool) -> int:
     if dry_run:
         logger.info("[DRY RUN] town_crimes: %d 件", len(records))
         for r in records[:10]:
-            has_geo = "○" if r.get("boundary") else "×"
+            has_geo = "○" if r.get("lat") else "×"
             logger.info(
-                "  %s | %s | 犯罪計=%d | ポリゴン=%s",
+                "  %s | %s | 犯罪計=%d | 座標=%s",
                 r["area_name"], r["municipality_name"],
                 r["total_crimes"], has_geo,
             )

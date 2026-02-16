@@ -74,7 +74,6 @@ def main(args):
             {
                 "name": s["name"],
                 "name_en": s["name_en"],
-                "location": f"POINT({s['lng']} {s['lat']})",
                 "municipality_code": s["municipality_code"],
                 "municipality_name": s["municipality_name"],
                 "lines": s["lines"],
@@ -86,11 +85,10 @@ def main(args):
         logger.info("[DRY RUN] %d 駅（先頭 20 件を表示）:", len(records))
         for r in records[:20]:
             logger.info(
-                "  %s (%s) | %s | %s | %s",
+                "  %s (%s) | %s | %s",
                 r["name"],
                 r["name_en"],
                 r["municipality_name"],
-                r["location"],
                 ", ".join(r["lines"]),
             )
         if len(records) > 20:

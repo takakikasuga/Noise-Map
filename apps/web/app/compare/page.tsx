@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { CompareContent } from './CompareContent';
 
 export const metadata: Metadata = {
-  title: '駅比較',
-  description: '複数の駅の住環境リスクを横並びで比較',
+  title: 'エリア比較',
+  description: '複数のエリアの住環境リスクを横並びで比較',
 };
 
 export default function ComparePage() {

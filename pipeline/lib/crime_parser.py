@@ -135,7 +135,6 @@ def parse_crime_csv(csv_path: str, year: int) -> list[dict[str, Any]]:
 
             records.append({
                 "area_name": normalized,
-                "area_name_raw": raw_name,
                 "municipality_code": code,
                 "municipality_name": muni_name,
                 "year": year,
@@ -241,7 +240,7 @@ def attach_boundaries(
     boundaries: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """
-    犯罪レコードに境界ポリゴンとcentroidを付与。
+    犯罪レコードに lat/lng 座標を付与。
 
     マッチング順序:
     1. 正規化名で完全一致
@@ -254,8 +253,10 @@ def attach_boundaries(
         # 1. 完全一致
         geo = boundaries.get(rec["area_name"])
         if geo:
-            rec["centroid"] = geo["centroid_wkt"]
-            rec["boundary"] = geo["boundary_wkt"]
+            wkt = geo["centroid_wkt"]  # "POINT(lng lat)"
+            parts = wkt.replace("POINT(", "").replace(")", "").split()
+            rec["lat"] = float(parts[1])
+            rec["lng"] = float(parts[0])
             matched_exact += 1
             continue
 
@@ -264,13 +265,15 @@ def attach_boundaries(
             rec["area_name"], rec["municipality_name"], boundaries
         )
         if geo:
-            rec["centroid"] = geo["centroid_wkt"]
-            rec["boundary"] = geo["boundary_wkt"]
+            wkt = geo["centroid_wkt"]
+            parts = wkt.replace("POINT(", "").replace(")", "").split()
+            rec["lat"] = float(parts[1])
+            rec["lng"] = float(parts[0])
             matched_parent += 1
             continue
 
-        rec["centroid"] = None
-        rec["boundary"] = None
+        rec["lat"] = None
+        rec["lng"] = None
 
     total = matched_exact + matched_parent
     rate = total / len(records) * 100 if records else 0

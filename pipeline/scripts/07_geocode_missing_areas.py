@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-centroid が NULL の town_crimes レコードを GSI ジオコーディングで補完。
+lat が NULL の town_crimes レコードを GSI ジオコーディングで補完。
 
 1. 親→子 union: Shapefile に子丁目がある場合はポリゴンを union
-2. GSI 住所検索: 住所文字列から座標を取得（ポリゴンなし、centroid のみ）
+2. GSI 住所検索: 住所文字列から座標を取得
 
-出力: town_crimes テーブルの centroid, lat, lng を UPDATE
+出力: town_crimes テーブルの lat, lng を UPDATE
 """
 
 import argparse
@@ -33,7 +33,7 @@ PAGE_SIZE = 1000
 
 
 def fetch_null_centroid_areas() -> list[dict]:
-    """centroid が NULL の town_crimes レコードを取得（各 area_name につき1行のみ）"""
+    """lat が NULL の town_crimes レコードを取得（各 area_name につき1行のみ）"""
     client = get_client()
     rows: list[dict] = []
     offset = 0
@@ -41,7 +41,7 @@ def fetch_null_centroid_areas() -> list[dict]:
         page = (
             client.table("town_crimes")
             .select("id,area_name,municipality_name,year")
-            .is_("centroid", "null")
+            .is_("lat", "null")
             .range(offset, offset + PAGE_SIZE - 1)
             .execute()
         )
@@ -54,11 +54,11 @@ def fetch_null_centroid_areas() -> list[dict]:
 
 
 def main(args):
-    logger.info("開始: NULL centroid エリアのジオコーディング")
+    logger.info("開始: NULL lat エリアのジオコーディング")
 
-    # 1. NULL centroid レコード取得
+    # 1. NULL lat レコード取得
     rows = fetch_null_centroid_areas()
-    logger.info("NULL centroid レコード: %d 件", len(rows))
+    logger.info("NULL lat レコード: %d 件", len(rows))
     if not rows:
         logger.info("処理対象なし")
         return
@@ -135,9 +135,7 @@ def main(args):
     updated = 0
     for area_name, (lat, lng) in geocoded.items():
         # 同じ area_name の全年分を更新
-        wkt = f"SRID=4326;POINT({lng} {lat})"
         client.table("town_crimes").update({
-            "centroid": wkt,
             "lat": lat,
             "lng": lng,
         }).eq("area_name", area_name).execute()

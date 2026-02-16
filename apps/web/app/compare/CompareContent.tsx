@@ -5,18 +5,17 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ScoreBadge } from '@hikkoshimap/ui';
 import { supabase } from '@/lib/supabase';
-import { MAX_COMPARE_STATIONS } from '@/lib/constants';
+import { MAX_COMPARE_AREAS } from '@/lib/constants';
 
-interface StationSearchItem {
-  name: string;
+interface AreaSearchItem {
+  area_name: string;
   name_en: string;
 }
 
-interface StationCompareData {
-  name: string;
+interface AreaCompareData {
+  areaName: string;
   nameEn: string;
   municipalityName: string;
-  lines: string[];
   safety: {
     score: number;
     rank: number | null;
@@ -34,81 +33,103 @@ interface StationCompareData {
 export function CompareContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [allStations, setAllStations] = useState<StationSearchItem[]>([]);
+  const [allAreas, setAllAreas] = useState<AreaSearchItem[]>([]);
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
-  const [stationData, setStationData] = useState<Map<string, StationCompareData>>(new Map());
+  const [areaData, setAreaData] = useState<Map<string, AreaCompareData>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<StationSearchItem[]>([]);
+  const [searchResults, setSearchResults] = useState<AreaSearchItem[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [latestYear, setLatestYear] = useState<number | null>(null);
 
-  // 全駅リスト取得
+  // 最新年度を取得してからエリアリストを取得
   useEffect(() => {
-    async function fetchStations() {
+    async function fetchAreas() {
+      // 最新年度を取得
+      const { data: yearRow } = await supabase
+        .from('town_crimes')
+        .select('year')
+        .order('year', { ascending: false })
+        .limit(1)
+        .single();
+
+      const year = yearRow?.year ?? null;
+      setLatestYear(year);
+
+      if (!year) {
+        setLoading(false);
+        return;
+      }
+
+      // 最新年度のエリアリストを取得（name_en で重複排除）
       const { data } = await supabase
-        .from('stations')
-        .select('name, name_en')
-        .order('name');
-      setAllStations(data ?? []);
+        .from('town_crimes')
+        .select('area_name, name_en')
+        .eq('year', year)
+        .not('name_en', 'is', null)
+        .order('area_name');
+
+      // name_en で重複排除
+      const seen = new Set<string>();
+      const deduped: AreaSearchItem[] = [];
+      for (const row of data ?? []) {
+        if (!seen.has(row.name_en)) {
+          seen.add(row.name_en);
+          deduped.push({ area_name: row.area_name, name_en: row.name_en });
+        }
+      }
+
+      setAllAreas(deduped);
       setLoading(false);
     }
-    fetchStations();
+    fetchAreas();
   }, []);
 
-  // URLパラメータから初期駅を読み込み
+  // URLパラメータから初期エリアを読み込み
   useEffect(() => {
-    const stationsParam = searchParams.get('stations');
-    if (stationsParam) {
-      const slugs = stationsParam.split(',').filter(Boolean).slice(0, MAX_COMPARE_STATIONS);
+    const areasParam = searchParams.get('areas');
+    if (areasParam) {
+      const slugs = areasParam.split(',').filter(Boolean).slice(0, MAX_COMPARE_AREAS);
       setSelectedSlugs(slugs);
     }
   }, [searchParams]);
 
-  // 駅データ取得 (rerender: ref で重複チェック → 安定した callback)
+  // エリアデータ取得
   const fetchedRef = useRef(new Set<string>());
-  const fetchStationData = useCallback(async (slug: string) => {
-    if (fetchedRef.current.has(slug)) return;
+  const fetchAreaData = useCallback(async (slug: string) => {
+    if (fetchedRef.current.has(slug) || !latestYear) return;
     fetchedRef.current.add(slug);
 
-    const { data: station } = await supabase
-      .from('stations')
-      .select('*')
+    // Safety データ取得（最新年度）
+    const { data: crime } = await supabase
+      .from('town_crimes')
+      .select('area_name, municipality_name, score, rank, total_crimes')
       .eq('name_en', slug)
+      .order('year', { ascending: false })
+      .limit(1)
       .single();
 
-    if (!station) {
+    if (!crime) {
       fetchedRef.current.delete(slug);
       return;
     }
 
-    // async-parallel: safety と vibe を並列取得
-    const [{ data: safety }, { data: vibe }] = await Promise.all([
-      supabase
-        .from('safety_scores')
-        .select('score, rank, total_crimes')
-        .eq('station_id', station.id)
-        .order('year', { ascending: false })
-        .limit(1)
-        .single(),
-      supabase
-        .from('vibe_data')
-        .select('tags, restaurant_count, park_count, population_young_ratio, single_household_ratio')
-        .eq('station_id', station.id)
-        .single(),
-    ]);
+    // Vibe データ取得
+    const { data: vibe } = await supabase
+      .from('area_vibe_data')
+      .select('tags, restaurant_count, park_count, population_young_ratio, single_household_ratio')
+      .eq('area_name', crime.area_name)
+      .single();
 
-    const data: StationCompareData = {
-      name: station.name,
-      nameEn: station.name_en,
-      municipalityName: station.municipality_name,
-      lines: station.lines ?? [],
-      safety: safety
-        ? {
-            score: safety.score,
-            rank: safety.rank,
-            totalCrimes: safety.total_crimes,
-          }
-        : null,
+    const data: AreaCompareData = {
+      areaName: crime.area_name,
+      nameEn: slug,
+      municipalityName: crime.municipality_name,
+      safety: {
+        score: crime.score,
+        rank: crime.rank,
+        totalCrimes: crime.total_crimes,
+      },
       vibe: vibe
         ? {
             tags: vibe.tags ?? [],
@@ -120,19 +141,19 @@ export function CompareContent() {
         : null,
     };
 
-    setStationData((prev) => new Map(prev).set(slug, data));
-  }, []);
+    setAreaData((prev) => new Map(prev).set(slug, data));
+  }, [latestYear]);
 
-  // 選択駅が変わったらデータ取得
+  // 選択エリアが変わったらデータ取得
   useEffect(() => {
-    selectedSlugs.forEach(fetchStationData);
-  }, [selectedSlugs, fetchStationData]);
+    selectedSlugs.forEach(fetchAreaData);
+  }, [selectedSlugs, fetchAreaData]);
 
   // URL更新
   const updateUrl = useCallback(
     (slugs: string[]) => {
       if (slugs.length > 0) {
-        router.replace(`/compare?stations=${slugs.join(',')}`, { scroll: false });
+        router.replace(`/compare?areas=${slugs.join(',')}`, { scroll: false });
       } else {
         router.replace('/compare', { scroll: false });
       }
@@ -140,10 +161,10 @@ export function CompareContent() {
     [router],
   );
 
-  // 駅追加
-  const addStation = useCallback(
+  // エリア追加
+  const addArea = useCallback(
     (slug: string) => {
-      if (selectedSlugs.includes(slug) || selectedSlugs.length >= MAX_COMPARE_STATIONS) return;
+      if (selectedSlugs.includes(slug) || selectedSlugs.length >= MAX_COMPARE_AREAS) return;
       const newSlugs = [...selectedSlugs, slug];
       setSelectedSlugs(newSlugs);
       updateUrl(newSlugs);
@@ -153,8 +174,8 @@ export function CompareContent() {
     [selectedSlugs, updateUrl],
   );
 
-  // 駅削除
-  const removeStation = useCallback(
+  // エリア削除
+  const removeArea = useCallback(
     (slug: string) => {
       const newSlugs = selectedSlugs.filter((s) => s !== slug);
       setSelectedSlugs(newSlugs);
@@ -173,16 +194,16 @@ export function CompareContent() {
         setShowDropdown(false);
         return;
       }
-      const matches = allStations
+      const matches = allAreas
         .filter(
           (s) =>
-            s.name.startsWith(q) && !selectedSlugs.includes(s.name_en),
+            s.area_name.includes(q) && !selectedSlugs.includes(s.name_en),
         )
         .slice(0, 10);
       setSearchResults(matches);
       setShowDropdown(true);
     },
-    [allStations, selectedSlugs],
+    [allAreas, selectedSlugs],
   );
 
   if (loading) {
@@ -196,30 +217,30 @@ export function CompareContent() {
   return (
     <div className="space-y-8">
       <section>
-        <h1 className="text-3xl font-bold">駅を比較する</h1>
+        <h1 className="text-3xl font-bold">エリアを比較する</h1>
         <p className="mt-2 text-gray-600">
-          2〜3駅を選んで、住環境リスクを横並びで比較できます
+          2〜3エリアを選んで、住環境リスクを横並びで比較できます
         </p>
       </section>
 
-      {/* 駅選択 */}
+      {/* エリア選択 */}
       <section className="rounded-lg border bg-white p-6 space-y-4">
-        {/* 選択済み駅 */}
+        {/* 選択済みエリア */}
         <div className="flex flex-wrap gap-3">
           {selectedSlugs.map((slug) => {
-            const data = stationData.get(slug);
+            const data = areaData.get(slug);
             return (
               <div
                 key={slug}
                 className="flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-blue-800"
               >
-                <Link href={`/station/${slug}`} className="font-medium hover:underline">
-                  {data?.name ?? slug}駅
+                <Link href={`/area/${slug}`} className="font-medium hover:underline">
+                  {data?.areaName ?? slug}
                 </Link>
                 <button
-                  onClick={() => removeStation(slug)}
+                  onClick={() => removeArea(slug)}
                   className="ml-1 text-blue-400 hover:text-red-500"
-                  aria-label={`${data?.name ?? slug}を削除`}
+                  aria-label={`${data?.areaName ?? slug}を削除`}
                 >
                   x
                 </button>
@@ -228,8 +249,8 @@ export function CompareContent() {
           })}
         </div>
 
-        {/* 駅追加 */}
-        {selectedSlugs.length < MAX_COMPARE_STATIONS && (
+        {/* エリア追加 */}
+        {selectedSlugs.length < MAX_COMPARE_AREAS && (
           <div className="relative max-w-sm">
             <input
               type="text"
@@ -239,11 +260,11 @@ export function CompareContent() {
               onFocus={() => {
                 if (searchQuery.trim()) setShowDropdown(true);
               }}
-              placeholder="駅名を入力して追加…"
-              name="station-search"
+              placeholder="エリア名を入力して追加…"
+              name="area-search"
               autoComplete="off"
               spellCheck={false}
-              aria-label="比較する駅を検索"
+              aria-label="比較するエリアを検索"
               className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus-visible:border-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
             />
             {showDropdown && searchQuery.trim() !== '' && (
@@ -253,10 +274,10 @@ export function CompareContent() {
                     <li
                       key={s.name_en}
                       role="option"
-                      onMouseDown={() => addStation(s.name_en)}
+                      onMouseDown={() => addArea(s.name_en)}
                       className="cursor-pointer px-4 py-2 text-sm hover:bg-blue-50"
                     >
-                      {s.name}駅
+                      {s.area_name}
                     </li>
                   ))
                 ) : (
@@ -276,11 +297,11 @@ export function CompareContent() {
               <tr className="border-b bg-gray-50">
                 <th className="px-4 py-3 text-left font-medium text-gray-600">項目</th>
                 {selectedSlugs.map((slug) => {
-                  const data = stationData.get(slug);
+                  const data = areaData.get(slug);
                   return (
                     <th key={slug} className="px-4 py-3 text-center font-semibold">
-                      <Link href={`/station/${slug}`} className="hover:text-blue-600">
-                        {data?.name ?? slug}駅
+                      <Link href={`/area/${slug}`} className="hover:text-blue-600">
+                        {data?.areaName ?? slug}
                       </Link>
                     </th>
                   );
@@ -292,15 +313,7 @@ export function CompareContent() {
                 <td className="px-4 py-3 text-gray-600">市区町村</td>
                 {selectedSlugs.map((slug) => (
                   <td key={slug} className="px-4 py-3 text-center">
-                    {stationData.get(slug)?.municipalityName ?? '-'}
-                  </td>
-                ))}
-              </tr>
-              <tr className="border-b">
-                <td className="px-4 py-3 text-gray-600">路線</td>
-                {selectedSlugs.map((slug) => (
-                  <td key={slug} className="px-4 py-3 text-center text-xs">
-                    {stationData.get(slug)?.lines.join(', ') ?? '-'}
+                    {areaData.get(slug)?.municipalityName ?? '-'}
                   </td>
                 ))}
               </tr>
@@ -308,8 +321,8 @@ export function CompareContent() {
                 <td className="px-4 py-3 font-medium text-green-800">治安偏差値</td>
                 {selectedSlugs.map((slug) => (
                   <td key={slug} className="px-4 py-3 text-center font-bold text-lg">
-                    {stationData.get(slug)?.safety?.score != null
-                      ? <ScoreBadge score={stationData.get(slug)!.safety!.score} />
+                    {areaData.get(slug)?.safety?.score != null
+                      ? <ScoreBadge score={areaData.get(slug)!.safety!.score} />
                       : '-'}
                   </td>
                 ))}
@@ -317,7 +330,7 @@ export function CompareContent() {
               <tr className="border-b">
                 <td className="px-4 py-3 text-gray-600">治安ランク</td>
                 {selectedSlugs.map((slug) => {
-                  const rank = stationData.get(slug)?.safety?.rank;
+                  const rank = areaData.get(slug)?.safety?.rank;
                   return (
                     <td key={slug} className="px-4 py-3 text-center">
                       {rank != null ? `${rank}位` : '-'}
@@ -329,7 +342,7 @@ export function CompareContent() {
                 <td className="px-4 py-3 text-gray-600">犯罪件数</td>
                 {selectedSlugs.map((slug) => (
                   <td key={slug} className="px-4 py-3 text-center">
-                    {stationData.get(slug)?.safety?.totalCrimes ?? '-'}件
+                    {areaData.get(slug)?.safety?.totalCrimes ?? '-'}件
                   </td>
                 ))}
               </tr>
@@ -337,7 +350,7 @@ export function CompareContent() {
                 <td className="px-4 py-3 text-gray-600">飲食店</td>
                 {selectedSlugs.map((slug) => (
                   <td key={slug} className="px-4 py-3 text-center">
-                    {stationData.get(slug)?.vibe?.restaurantCount ?? '-'}
+                    {areaData.get(slug)?.vibe?.restaurantCount ?? '-'}
                   </td>
                 ))}
               </tr>
@@ -345,7 +358,7 @@ export function CompareContent() {
                 <td className="px-4 py-3 text-gray-600">公園</td>
                 {selectedSlugs.map((slug) => (
                   <td key={slug} className="px-4 py-3 text-center">
-                    {stationData.get(slug)?.vibe?.parkCount ?? '-'}
+                    {areaData.get(slug)?.vibe?.parkCount ?? '-'}
                   </td>
                 ))}
               </tr>
@@ -354,7 +367,7 @@ export function CompareContent() {
                 {selectedSlugs.map((slug) => (
                   <td key={slug} className="px-4 py-3 text-center">
                     <div className="flex flex-wrap justify-center gap-1">
-                      {stationData.get(slug)?.vibe?.tags.map((tag) => (
+                      {areaData.get(slug)?.vibe?.tags.map((tag) => (
                         <span
                           key={tag}
                           className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800"
@@ -373,13 +386,13 @@ export function CompareContent() {
 
       {selectedSlugs.length < 2 && selectedSlugs.length > 0 && (
         <section className="rounded-lg border bg-white p-8 text-center text-gray-400">
-          <p>もう1駅追加すると比較テーブルが表示されます</p>
+          <p>もう1エリア追加すると比較テーブルが表示されます</p>
         </section>
       )}
 
       {selectedSlugs.length === 0 && (
         <section className="rounded-lg border bg-white p-8 text-center text-gray-400">
-          <p>上の検索バーから駅を2〜3つ選んでください</p>
+          <p>上の検索バーからエリアを2〜3つ選んでください</p>
         </section>
       )}
     </div>

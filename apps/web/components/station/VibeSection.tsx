@@ -1,8 +1,8 @@
-import type { VibeData } from '@hikkoshimap/shared';
+import type { AreaVibeData } from '@hikkoshimap/shared';
 import { Badge } from '@hikkoshimap/ui';
 
 interface VibeSectionProps {
-  data: VibeData;
+  data: AreaVibeData;
 }
 
 function PopulationBar({ label, ratio, color }: { label: string; ratio: number; color: string }) {

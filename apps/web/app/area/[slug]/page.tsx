@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import type { AreaSafety, VibeData } from '@hikkoshimap/shared';
+import type { AreaSafety, AreaVibeData } from '@hikkoshimap/shared';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
 import { ScoreBadge } from '@hikkoshimap/ui';
 import {
@@ -187,7 +187,7 @@ export default async function AreaPage({
         {/* 雰囲気セクション */}
         <section className="rounded-lg border bg-white p-6">
           {vibeData ? (
-            <VibeSection data={vibeData as unknown as VibeData} />
+            <VibeSection data={vibeData as unknown as AreaVibeData} />
           ) : (
             <div>
               <h2 className="text-xl font-semibold">街の雰囲気</h2>

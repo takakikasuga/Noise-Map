@@ -95,22 +95,6 @@ export async function getStationSafety(stationId: string) {
   return snakeToCamelArray(data ?? []);
 }
 
-/**
- * 駅の雰囲気データを取得
- */
-export async function getStationVibe(stationId: string) {
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase
-    .from('vibe_data')
-    .select('*')
-    .eq('station_id', stationId)
-    .limit(1)
-    .single();
-
-  if (error && error.code !== 'PGRST116') throw error;
-  if (!data) return null;
-  return snakeToCamel(data);
-}
 
 /**
  * エリア（丁目）の雰囲気データを取得
@@ -182,61 +166,6 @@ export async function getStationListForSearch() {
   return snakeToCamelArray(data ?? []);
 }
 
-/**
- * 治安スコア上位の駅を取得（最新年）
- */
-export async function getTopStations(limit: number = 5) {
-  const supabase = createSupabaseClient();
-  const year = await getLatestYear();
-  const { data, error } = await supabase
-    .from('safety_scores')
-    .select('score, rank, stations(name, name_en)')
-    .eq('year', year)
-    .order('score', { ascending: false })
-    .limit(limit);
-
-  if (error) throw error;
-
-  return (data ?? [])
-    .filter((s) => s.stations)
-    .map((s) => {
-      const station = s.stations as unknown as { name: string; name_en: string };
-      return {
-        name: station.name,
-        nameEn: station.name_en,
-        score: s.score,
-        rank: s.rank,
-      };
-    });
-}
-
-/**
- * 治安スコア下位の駅を取得（最新年）
- */
-export async function getBottomStations(limit: number = 5) {
-  const supabase = createSupabaseClient();
-  const year = await getLatestYear();
-  const { data, error } = await supabase
-    .from('safety_scores')
-    .select('score, rank, stations(name, name_en)')
-    .eq('year', year)
-    .order('score', { ascending: true })
-    .limit(limit);
-
-  if (error) throw error;
-
-  return (data ?? [])
-    .filter((s) => s.stations)
-    .map((s) => {
-      const station = s.stations as unknown as { name: string; name_en: string };
-      return {
-        name: station.name,
-        nameEn: station.name_en,
-        score: s.score,
-        rank: s.rank,
-      };
-    });
-}
 
 /**
  * 治安スコア上位のエリアを取得（最新年）
