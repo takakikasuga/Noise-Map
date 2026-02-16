@@ -84,9 +84,14 @@ export default function AreaMapInner() {
 
   useEffect(() => {
     fetch('/api/area-geojson', { cache: 'no-cache' })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
-        setAllData(data as FeatureCollection);
+        if (data?.type === 'FeatureCollection' && Array.isArray(data.features)) {
+          setAllData(data as FeatureCollection);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));

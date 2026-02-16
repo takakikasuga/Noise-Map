@@ -74,8 +74,15 @@ export default function StationMapInner({
 
   useEffect(() => {
     fetch('/api/area-geojson')
-      .then((res) => res.json())
-      .then((data) => setAreaData(data as FeatureCollection))
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.type === 'FeatureCollection' && Array.isArray(data.features)) {
+          setAreaData(data as FeatureCollection);
+        }
+      })
       .catch(() => {});
   }, []);
 
