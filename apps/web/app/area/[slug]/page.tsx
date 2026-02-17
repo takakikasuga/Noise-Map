@@ -4,7 +4,6 @@ import type { AreaSafety, AreaVibeData } from '@hikkoshimap/shared';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
 import { ScoreBadge } from '@hikkoshimap/ui';
 import {
-  getAllAreas,
   getAreaBySlug,
   getAreaSafety,
   getAreaVibe,
@@ -17,12 +16,13 @@ import { StationMap } from '@/components/map/StationMap';
 import { UgcSection } from '@/components/ugc/UgcSection';
 import { NearbyStationsSection } from '@/components/station/NearbyStationsSection';
 
-/** ビルド時にプリレンダリングする上位エリア（残りは ISR でオンデマンド生成） */
-export async function generateStaticParams() {
-  const areas = await getAllAreas();
-  // Supabase 無料枠のビルド時同時接続数制限を回避するため上位 1000 件のみ SSG
-  // 残りは dynamicParams = true（デフォルト）により初回アクセス時に生成・キャッシュ
-  return areas.slice(0, 1000).map((a) => ({ slug: (a as { nameEn: string }).nameEn }));
+/**
+ * SSG をスキップし全エリアページを ISR（オンデマンド生成）に委譲する。
+ * Supabase 無料枠ではビルド時の同時接続数上限により 500 エラーが発生するため。
+ * サイトマップは全 URL を返すので SEO への影響なし。
+ */
+export function generateStaticParams() {
+  return [];
 }
 
 /** 動的メタデータ生成 */
