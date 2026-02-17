@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
 import { ScoreBadge } from '@hikkoshimap/ui';
+import { SITE_URL } from '@/lib/site';
 import {
   getStationsByMunicipality,
   getAreasByMunicipality,
@@ -123,7 +124,7 @@ export default async function CityPage({
         '@type': 'ListItem',
         position: 1,
         name: 'ホーム',
-        item: 'https://hikkoshimap.com',
+        item: SITE_URL,
       },
       { '@type': 'ListItem', position: 2, name: muni.name },
     ],

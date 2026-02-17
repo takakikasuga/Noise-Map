@@ -10,10 +10,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
+    "eslint": "^9",
+    "prettier": "^3",
     "turbo": "^2",
     "typescript": "^5",
-    "prettier": "^3",
-    "eslint": "^9"
+    "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@10.28.2"
 }

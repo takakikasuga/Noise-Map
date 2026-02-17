@@ -1,38 +1,53 @@
 import type { MetadataRoute } from 'next';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
-import { getAllStations, getAllAreas } from '@/lib/db';
+import { getAllStations, getAllAreas, getLinesList } from '@/lib/db';
+import { SITE_URL } from '@/lib/site';
+import { lineNameToSlug } from '@/lib/line-slug';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [stations, areas] = await Promise.all([
+  const [stations, areas, lines] = await Promise.all([
     getAllStations(),
     getAllAreas(),
+    getLinesList(),
   ]);
 
   const cityPages: MetadataRoute.Sitemap = TOKYO_MUNICIPALITIES.map((m) => ({
-    url: `https://hikkoshimap.com/city/${m.nameEn}`,
+    url: `${SITE_URL}/city/${m.nameEn}`,
     changeFrequency: 'monthly' as const,
     priority: 0.9,
   }));
 
   const stationPages: MetadataRoute.Sitemap = stations.map((s) => ({
-    url: `https://hikkoshimap.com/station/${(s as { nameEn: string }).nameEn}`,
+    url: `${SITE_URL}/station/${(s as { nameEn: string }).nameEn}`,
     changeFrequency: 'monthly',
     priority: 0.8,
   }));
 
   const areaPages: MetadataRoute.Sitemap = areas.map((a) => ({
-    url: `https://hikkoshimap.com/area/${(a as { nameEn: string }).nameEn}`,
+    url: `${SITE_URL}/area/${(a as { nameEn: string }).nameEn}`,
     changeFrequency: 'monthly',
     priority: 0.6,
   }));
 
+  const linePages: MetadataRoute.Sitemap = lines.map((l) => ({
+    url: `${SITE_URL}/line/${lineNameToSlug(l.name)}`,
+    changeFrequency: 'monthly',
+    priority: 0.85,
+  }));
+
   return [
     {
-      url: 'https://hikkoshimap.com',
+      url: SITE_URL,
       changeFrequency: 'weekly',
       priority: 1.0,
     },
+    {
+      url: `${SITE_URL}/line`,
+      changeFrequency: 'monthly',
+      priority: 0.9,
+    },
     ...cityPages,
+    ...linePages,
     ...stationPages,
     ...areaPages,
   ];

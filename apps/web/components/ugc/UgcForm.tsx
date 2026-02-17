@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { track } from '@vercel/analytics';
 import { supabase } from '@/lib/supabase';
 
 const CATEGORIES = [
@@ -85,6 +86,7 @@ export function UgcForm({ areaNameEn, nearbyAreas, onPosted }: UgcFormProps) {
       return;
     }
 
+    track('ugc_submit', { category });
     setContent('');
     setRating(null);
     setCategory('safety');

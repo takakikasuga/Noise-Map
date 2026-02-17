@@ -18,11 +18,15 @@ export function CrimeTrendChart({ data, selectedYear }: CrimeTrendChartProps) {
   return (
     <ResponsiveContainer width="100%" height={250}>
       <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-        <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+        <XAxis
+          dataKey="year"
+          tick={{ fontSize: 12 }}
+          tickFormatter={(year) => (year === 2025 ? `${year}(暫定)` : `${year}`)}
+        />
         <YAxis tick={{ fontSize: 12 }} width={50} />
         <Tooltip
           formatter={(value) => [`${value}件`, '犯罪件数']}
-          labelFormatter={(label) => `${label}年`}
+          labelFormatter={(label) => `${label}年${Number(label) === 2025 ? '（暫定）' : ''}`}
         />
         <Line
           type="monotone"

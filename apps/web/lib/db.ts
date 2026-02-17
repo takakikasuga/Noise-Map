@@ -456,6 +456,103 @@ export async function getMunicipalityCrimeStats(municipalityName: string) {
 }
 
 /**
+ * 全路線の一覧を取得（stationsテーブルの lines カラムから distinct）
+ * 各路線の駅数と平均治安スコアを含む
+ */
+export async function getLinesList() {
+  const supabase = createSupabaseClient();
+  const year = await getLatestYear();
+
+  const { data, error } = await supabase
+    .from('stations')
+    .select('id, lines');
+
+  if (error) throw error;
+
+  // lines は string[] なので、展開して駅IDとの対応を作る
+  const lineStationMap = new Map<string, string[]>();
+  for (const row of data ?? []) {
+    const lines = (row.lines as string[]) ?? [];
+    for (const line of lines) {
+      const existing = lineStationMap.get(line) ?? [];
+      existing.push(row.id);
+      lineStationMap.set(line, existing);
+    }
+  }
+
+  // 各路線の駅IDリストから治安スコアを取得
+  const allStationIds = [...new Set((data ?? []).map((r) => r.id))];
+  const { data: scores, error: scoresError } = await supabase
+    .from('safety_scores')
+    .select('station_id, score')
+    .in('station_id', allStationIds)
+    .eq('year', year);
+
+  if (scoresError) throw scoresError;
+
+  const scoreMap = new Map<string, number>();
+  for (const s of scores ?? []) {
+    scoreMap.set(s.station_id, s.score);
+  }
+
+  const lines: { name: string; stationCount: number; avgScore: number | null }[] = [];
+  for (const [lineName, stationIds] of lineStationMap) {
+    const lineScores = stationIds
+      .map((id) => scoreMap.get(id))
+      .filter((s): s is number => s != null);
+    const avgScore = lineScores.length > 0
+      ? Math.round((lineScores.reduce((a, b) => a + b, 0) / lineScores.length) * 10) / 10
+      : null;
+    lines.push({ name: lineName, stationCount: stationIds.length, avgScore });
+  }
+
+  return lines.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+}
+
+/**
+ * 特定路線の駅一覧を取得（治安スコア付き）
+ */
+export async function getStationsByLine(lineName: string) {
+  const supabase = createSupabaseClient();
+  const year = await getLatestYear();
+
+  const { data, error } = await supabase
+    .from('stations')
+    .select('id, name, name_en, lat, lng, lines, municipality_name')
+    .contains('lines', [lineName])
+    .order('name');
+
+  if (error) throw error;
+
+  const stations = snakeToCamelArray(data ?? []);
+
+  const stationIds = (data ?? []).map((s) => s.id);
+  if (stationIds.length === 0) return [];
+
+  const { data: scores, error: scoresError } = await supabase
+    .from('safety_scores')
+    .select('station_id, score, rank, total_crimes')
+    .in('station_id', stationIds)
+    .eq('year', year);
+
+  if (scoresError) throw scoresError;
+
+  const scoreMap = new Map<string, { score: number; rank: number | null; totalCrimes: number }>();
+  for (const s of scores ?? []) {
+    scoreMap.set(s.station_id, { score: s.score, rank: s.rank, totalCrimes: s.total_crimes ?? 0 });
+  }
+
+  return stations
+    .map((s) => ({
+      ...s,
+      safetyScore: scoreMap.get(s.id as string)?.score ?? null,
+      safetyRank: scoreMap.get(s.id as string)?.rank ?? null,
+      totalCrimes: scoreMap.get(s.id as string)?.totalCrimes ?? 0,
+    }))
+    .sort((a, b) => (b.safetyScore ?? 0) - (a.safetyScore ?? 0));
+}
+
+/**
  * 駅座標から半径内の丁目犯罪データを取得（PostGIS空間クエリ）
  */
 export async function getNearbyAreas(lat: number, lng: number, radiusM = 500) {

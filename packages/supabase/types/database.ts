@@ -10,7 +10,6 @@ export interface Database {
           id: string;
           name: string;
           name_en: string;
-          location: unknown;
           lat: number;
           lng: number;
           municipality_code: string;
@@ -73,10 +72,10 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['hazard_data']['Insert']>;
       };
-      vibe_data: {
+      area_vibe_data: {
         Row: {
           id: string;
-          station_id: string;
+          area_name: string;
           population_young_ratio: number | null;
           population_family_ratio: number | null;
           population_elderly_ratio: number | null;
@@ -90,16 +89,64 @@ export interface Database {
           tags: string[];
           updated_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['vibe_data']['Row'], 'id' | 'updated_at'> & {
+        Insert: Omit<Database['public']['Tables']['area_vibe_data']['Row'], 'id' | 'updated_at'> & {
           id?: string;
           updated_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['vibe_data']['Insert']>;
+        Update: Partial<Database['public']['Tables']['area_vibe_data']['Insert']>;
+      };
+      areas: {
+        Row: {
+          id: string;
+          area_name: string;
+          area_name_en: string | null;
+          municipality_code: string;
+          municipality_name: string;
+          key_code: string | null;
+          lat: number | null;
+          lng: number | null;
+          centroid: string | null;
+          boundary: string | null;
+          geojson: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['areas']['Row'], 'id' | 'created_at' | 'updated_at'> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['areas']['Insert']>;
+      };
+      town_crimes: {
+        Row: {
+          id: string;
+          area_name: string;
+          name_en: string | null;
+          municipality_code: string;
+          municipality_name: string;
+          year: number;
+          total_crimes: number;
+          crimes_violent: number;
+          crimes_assault: number;
+          crimes_theft: number;
+          crimes_intellectual: number;
+          crimes_other: number;
+          score: number | null;
+          rank: number | null;
+          lat: number | null;
+          lng: number | null;
+          geojson: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['town_crimes']['Row'], 'id'> & {
+          id?: string;
+        };
+        Update: Partial<Database['public']['Tables']['town_crimes']['Insert']>;
       };
       ugc_posts: {
         Row: {
           id: string;
-          station_id: string;
+          area_name_en: string;
           content: string;
           category: string;
           rating: number | null;

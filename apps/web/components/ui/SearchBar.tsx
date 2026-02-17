@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { track } from '@vercel/analytics';
 
 interface SearchBarProps {
   stations: { name: string; nameEn: string }[];
@@ -81,6 +82,7 @@ export function SearchBar({ stations, areas = [], cities = [] }: SearchBarProps)
     (result: SearchResult) => {
       setShowDropdown(false);
       setQuery('');
+      track('search_click', { type: result.type });
       if (result.type === 'city') {
         router.push(`/city/${result.nameEn}`);
       } else if (result.type === 'station') {

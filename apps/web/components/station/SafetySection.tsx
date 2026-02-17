@@ -134,6 +134,10 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
         </tbody>
       </table>
 
+      {selectedYear === 2025 && (
+        <p className="text-xs text-amber-600 mt-2">※ 2025年のデータは1〜11月の暫定値です</p>
+      )}
+
       {delta != null && pctChange != null && (
         <div className="flex items-center gap-2 text-sm">
           <span className="text-gray-600">前年比:</span>

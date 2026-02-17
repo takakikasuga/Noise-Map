@@ -11,6 +11,7 @@ import {
   getStationHazard,
   getNearbyAreas,
 } from '@/lib/db';
+import { SITE_URL } from '@/lib/site';
 import { SafetySection } from '@/components/station/SafetySection';
 import { HazardSection } from '@/components/station/HazardSection';
 import { NearbyAreasSection } from '@/components/station/NearbyAreasSection';
@@ -125,9 +126,9 @@ export default async function StationPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'ホーム', item: 'https://hikkoshimap.com' },
+      { '@type': 'ListItem', position: 1, name: 'ホーム', item: SITE_URL },
       ...(citySlug
-        ? [{ '@type': 'ListItem', position: 2, name: municipalityName, item: `https://hikkoshimap.com/city/${citySlug}` }]
+        ? [{ '@type': 'ListItem', position: 2, name: municipalityName, item: `${SITE_URL}/city/${citySlug}` }]
         : []),
       { '@type': 'ListItem', position: citySlug ? 3 : 2, name: `${name}駅` },
     ],
