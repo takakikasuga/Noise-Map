@@ -1,3 +1,6 @@
+/** データソースの粒度レベル */
+export type DataSourceLevel = 'small_area' | 'municipality' | 'no_population';
+
 /** エリア（丁目）単位の雰囲気データ */
 export interface AreaVibeData {
   id: string;
@@ -13,5 +16,6 @@ export interface AreaVibeData {
   schoolCount: number;
   hospitalCount: number;
   tags: string[];
+  dataSourceLevel: DataSourceLevel;
   updatedAt: string;
 }

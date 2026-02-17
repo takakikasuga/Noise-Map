@@ -185,6 +185,10 @@ export default async function StationPage({
 
         {/* 治安セクション（参考: 市区町村全体） */}
         <section className="rounded-lg border bg-white p-6">
+          <p className="mb-3 text-xs text-gray-500">
+            ※ {municipalityName}全体の犯罪統計に基づく参考値です。
+            駅周辺の詳細は上の「周辺エリアの治安」をご確認ください。
+          </p>
           {safetyForClient.length > 0 ? (
             <SafetySection data={safetyForClient} />
           ) : (

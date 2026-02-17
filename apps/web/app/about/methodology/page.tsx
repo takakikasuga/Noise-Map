@@ -161,7 +161,7 @@ export default async function MethodologyPage() {
               <tr>
                 <td className="py-3 pr-4 font-medium">駅スコア</td>
                 <td className="py-3 pr-4">市区町村</td>
-                <td className="py-3">駅が属する市区町村全体の犯罪件数合計を使用。約659駅を対象に偏差値化。</td>
+                <td className="py-3">駅が属する市区町村全体の犯罪件数合計を使用。東京都本土部の約659駅（島嶼部除く）を対象に偏差値化。</td>
               </tr>
               <tr>
                 <td className="py-3 pr-4 font-medium">エリアスコア</td>
@@ -251,7 +251,7 @@ export default async function MethodologyPage() {
         <ul className="space-y-2 text-sm text-gray-700">
           <li className="flex gap-2">
             <span className="text-green-600 font-bold">&#10003;</span>
-            東京都全域を対象: 約659駅 + 約5,250エリア
+            東京都本土部の約659駅（島嶼部除く） + 約5,250エリア
           </li>
           <li className="flex gap-2">
             <span className="text-green-600 font-bold">&#10003;</span>
@@ -272,6 +272,10 @@ export default async function MethodologyPage() {
           <li className="flex gap-2">
             <span className="text-amber-500 font-bold">&#9888;</span>
             「認知件数」は警察に届け出された件数です。実際の発生件数とは異なる場合があります
+          </li>
+          <li className="flex gap-2">
+            <span className="text-amber-500 font-bold">&#9888;</span>
+            島嶼部（大島町・三宅村・八丈町等）は鉄道駅がなく、犯罪データの粒度が異なるため対象外です
           </li>
           <li className="flex gap-2">
             <span className="text-gray-400 font-bold">&#9675;</span>

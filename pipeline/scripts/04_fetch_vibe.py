@@ -177,6 +177,14 @@ def main(args):
             park_count=facilities["park_count"],
         )
 
+        # data_source_level: 人口データの粒度を記録
+        if young_ratio == 0 and family_ratio == 0 and elderly_ratio == 0:
+            data_source_level = "no_population"
+        elif is_municipality_level:
+            data_source_level = "municipality"
+        else:
+            data_source_level = "small_area"
+
         return {
             "area_name": area["area_name"],
             "population_young_ratio": young_ratio,
@@ -190,6 +198,7 @@ def main(args):
             "school_count": facilities["school_count"],
             "hospital_count": facilities["hospital_count"],
             "tags": tags,
+            "data_source_level": data_source_level,
         }
 
     # 4. Overpass API + レコード構築 + 逐次書き込み

@@ -128,17 +128,55 @@ def recalculate_safety_scores(dry_run: bool) -> int:
 
 def recalculate_hazard_scores(dry_run: bool) -> int:
     """
-    hazard_data テーブルのスコアとランキングを再計算。
+    hazard_data テーブルのランキングを再計算。
+
+    score（0-100、高いほど安全）は 03_fetch_hazard.py で算出済み。
+    ここでは score 降順でランクを付与する。
     """
-    records = fetch_all_rows("hazard_data", "id")
+    records = fetch_all_rows(
+        "hazard_data",
+        "id,station_id,score,flood_score,landslide_score,tsunami_score,liquefaction_score",
+    )
     if not records:
         logger.info("hazard_data レコードなし - スキップ")
         return 0
 
     logger.info("hazard_data 取得件数: %d", len(records))
-    # TODO: Phase 2 で hazard_data のスコア再計算を実装
-    logger.info("hazard_data スコア再計算は未実装（Phase 2）")
-    return 0
+
+    # score 降順でランキング（同スコアは同順位）
+    sorted_records = sorted(records, key=lambda r: -(r.get("score") or 0))
+
+    updates = []
+    for rank, r in enumerate(sorted_records, start=1):
+        updates.append({
+            "id": r["id"],
+            "station_id": r["station_id"],
+            "rank": rank,
+        })
+
+    if dry_run:
+        logger.info("[DRY RUN] hazard_data: %d 件のランキング更新をスキップ", len(updates))
+        logger.info("  === 安全な駅 TOP 10 ===")
+        for r in sorted_records[:10]:
+            logger.info(
+                "    station_id=%s | score=%.1f (洪水=%.1f 土砂=%.1f 津波=%.1f 液状=%.1f)",
+                r["station_id"], r.get("score", 0),
+                r.get("flood_score", 0), r.get("landslide_score", 0),
+                r.get("tsunami_score", 0), r.get("liquefaction_score", 0),
+            )
+        logger.info("  === リスクが高い駅 BOTTOM 10 ===")
+        for r in sorted_records[-10:]:
+            logger.info(
+                "    station_id=%s | score=%.1f (洪水=%.1f 土砂=%.1f 津波=%.1f 液状=%.1f)",
+                r["station_id"], r.get("score", 0),
+                r.get("flood_score", 0), r.get("landslide_score", 0),
+                r.get("tsunami_score", 0), r.get("liquefaction_score", 0),
+            )
+        return len(updates)
+
+    count = upsert_records("hazard_data", updates, on_conflict="station_id")
+    logger.info("hazard_data: %d 件のランキングを更新", count)
+    return count
 
 
 def main():

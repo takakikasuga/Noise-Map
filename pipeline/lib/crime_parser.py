@@ -28,7 +28,10 @@ _KANJI_NUM = {"一": "1", "二": "2", "三": "3", "四": "4", "五": "5",
               "六": "6", "七": "7", "八": "8", "九": "9"}
 
 # 集計行として除外するパターン
-_SKIP_PATTERNS = re.compile(r"(計$|^合計|^総計|^海外|^不明)")
+_SKIP_PATTERNS = re.compile(r"(計$|^合計|^総計|^海外|^不明|以下不詳)")
+
+# 公園パターン（丁目を含むものは除外しない）
+_PARK_PATTERN = re.compile(r"^(?!.*丁目).*公園$")
 
 # CSV列インデックス
 _COL = {
@@ -111,6 +114,11 @@ def parse_crime_csv(csv_path: str, year: int) -> list[dict[str, Any]]:
 
             # 集計行をスキップ
             if _SKIP_PATTERNS.search(normalized):
+                skipped += 1
+                continue
+
+            # 公園名をスキップ（丁目を含むものは除外しない）
+            if _PARK_PATTERN.search(normalized):
                 skipped += 1
                 continue
 
@@ -282,3 +290,31 @@ def attach_boundaries(
         total, len(records), rate, matched_exact, matched_parent,
     )
     return records
+
+
+def find_parent_child_matches(
+    crime_names: set[str],
+    area_names: set[str],
+) -> dict[str, list[str]]:
+    """
+    Type A（親子照合）: crime_names に存在するが area_names に完全一致しない名前について、
+    area_names 内で前方一致する子エリアを探す。
+
+    例: crime「あきる野市三内」→ area「あきる野市三内1丁目」「あきる野市三内2丁目」
+
+    Returns:
+        {親エリア名: [子エリア名のリスト]}
+    """
+    # crime_names のうち areas に完全一致しないもの
+    unmatched = crime_names - area_names
+
+    matches: dict[str, list[str]] = {}
+    for parent in unmatched:
+        children = sorted(
+            a for a in area_names
+            if a.startswith(parent) and a != parent
+        )
+        if children:
+            matches[parent] = children
+
+    return matches

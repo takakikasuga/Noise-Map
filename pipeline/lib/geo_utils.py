@@ -15,7 +15,9 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# 東京都おおよそのバウンディングボックス（本土のみ、島嶼部除く）
+# 東京都おおよそのバウンディングボックス（本土のみ）
+# 島嶼部（伊豆諸島・小笠原諸島）は緯度が大きく異なるため意図的に除外。
+# 島嶼部の駅データは存在しないため、このBBOXで十分。
 TOKYO_BBOX = {
     "lat_min": 35.50,
     "lat_max": 35.90,
@@ -52,6 +54,30 @@ TOKYO_MUNICIPALITIES: dict[str, str] = {
     "13303": "瑞穂町", "13305": "日の出町",
     "13307": "檜原村", "13308": "奥多摩町",
 }
+
+
+# 複数社で同名の路線名（曖昧路線名）
+_AMBIGUOUS_LINES = {"本線", "新宿線", "池袋線", "東上本線", "大師線", "多摩川線", "多摩線"}
+
+# 運営会社名 → 略称プレフィクス
+_OPERATOR_PREFIX = {
+    "京王電鉄": "京王",
+    "小田急電鉄": "小田急",
+    "京浜急行電鉄": "京急",
+    "東武鉄道": "東武",
+    "西武鉄道": "西武",
+    "東京都交通局": "都営",
+    "東京急行電鉄": "東急",
+    "京成電鉄": "京成",
+}
+
+
+def disambiguate_line_name(line_name: str, operator: str) -> str:
+    """曖昧な路線名に運営会社プレフィクスを付与して一意にする。"""
+    if line_name in _AMBIGUOUS_LINES and operator:
+        prefix = _OPERATOR_PREFIX.get(operator, operator)
+        return f"{prefix}{line_name}"
+    return line_name
 
 
 def parse_station_geojson(geojson_path: str) -> list[dict[str, Any]]:
@@ -99,6 +125,10 @@ def parse_station_geojson(geojson_path: str) -> list[dict[str, Any]]:
         group_code = props.get("N02_005g") or props.get("N02_005c", "")
         station_name = props.get("N02_005", "")
         line_name = props.get("N02_003", "")
+        operator = props.get("N02_004", "")
+
+        # 曖昧な路線名に運営会社プレフィクスを付与
+        line_name = disambiguate_line_name(line_name, operator)
 
         if not station_name or not group_code:
             continue

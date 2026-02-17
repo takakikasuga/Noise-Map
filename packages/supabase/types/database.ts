@@ -87,6 +87,7 @@ export interface Database {
           school_count: number;
           hospital_count: number;
           tags: string[];
+          data_source_level: 'small_area' | 'municipality' | 'no_population';
           updated_at: string;
         };
         Insert: Omit<Database['public']['Tables']['area_vibe_data']['Row'], 'id' | 'updated_at'> & {

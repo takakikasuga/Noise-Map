@@ -33,7 +33,7 @@ PAGE_SIZE = 1000
 def fetch_all_town_crimes() -> list[dict]:
     """town_crimes の全行をページネーションで取得（UPSERT用に全NOT NULLカラムを含む）"""
     client = get_client()
-    cols = "id,area_name,area_name_raw,municipality_code,municipality_name,year,total_crimes,crimes_violent,crimes_assault,crimes_theft,crimes_intellectual,crimes_other"
+    cols = "id,area_name,municipality_code,municipality_name,year,total_crimes,crimes_violent,crimes_assault,crimes_theft,crimes_intellectual,crimes_other"
     rows: list[dict] = []
     offset = 0
     while True:

@@ -179,6 +179,7 @@ export async function getTopAreas(limit: number = 5) {
     .eq('year', year)
     .not('score', 'is', null)
     .not('name_en', 'is', null)
+    .not('area_name', 'like', '%以下不詳%')
     .order('score', { ascending: false })
     .limit(limit);
 
@@ -203,6 +204,7 @@ export async function getBottomAreas(limit: number = 5) {
     .eq('year', year)
     .not('score', 'is', null)
     .not('name_en', 'is', null)
+    .not('area_name', 'like', '%以下不詳%')
     .order('score', { ascending: true })
     .limit(limit);
 
@@ -272,6 +274,7 @@ export async function getAllAreas() {
     .select('name_en')
     .eq('year', year)
     .not('name_en', 'is', null)
+    .not('area_name', 'like', '%以下不詳%')
     .order('name_en');
 
   if (error) throw error;
@@ -340,6 +343,7 @@ export async function getAreaListForSearch() {
     .select('area_name, name_en')
     .eq('year', year)
     .not('name_en', 'is', null)
+    .not('area_name', 'like', '%以下不詳%')
     .order('area_name');
 
   if (error) throw error;

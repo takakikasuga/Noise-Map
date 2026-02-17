@@ -1,8 +1,26 @@
-import type { AreaVibeData } from '@hikkoshimap/shared';
+import type { AreaVibeData, DataSourceLevel } from '@hikkoshimap/shared';
 import { Badge } from '@hikkoshimap/ui';
 
 interface VibeSectionProps {
   data: AreaVibeData;
+}
+
+function DataQualityNote({ level }: { level: DataSourceLevel }) {
+  if (level === 'municipality') {
+    return (
+      <div className="rounded-md border-l-4 border-amber-400 bg-amber-50 p-3 text-sm text-amber-800">
+        この地域の人口データは市区町村レベルの推計値です
+      </div>
+    );
+  }
+  if (level === 'no_population') {
+    return (
+      <div className="rounded-md border-l-4 border-gray-300 bg-gray-50 p-3 text-sm text-gray-600">
+        この地域の人口データは取得できませんでした
+      </div>
+    );
+  }
+  return null;
 }
 
 function PopulationBar({ label, ratio, color }: { label: string; ratio: number; color: string }) {
@@ -35,6 +53,8 @@ export function VibeSection({ data }: VibeSectionProps) {
   return (
     <section className="space-y-6">
       <h2 className="text-xl font-semibold">🎭 街の雰囲気 (Vibe)</h2>
+
+      <DataQualityNote level={data.dataSourceLevel} />
 
       <div className="flex flex-wrap gap-2">
         {data.tags.map((tag) => (

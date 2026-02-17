@@ -3,7 +3,7 @@ export type { Station } from './types/station';
 export type { SafetyScore } from './types/safety';
 export type { AreaSafety } from './types/area';
 export type { RiskLevel, HazardData } from './types/hazard';
-export type { AreaVibeData } from './types/vibe';
+export type { AreaVibeData, DataSourceLevel } from './types/vibe';
 export type { UgcPost } from './types/ugc';
 
 // 定数
