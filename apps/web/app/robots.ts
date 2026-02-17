@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/api/',
     },
-    sitemap: 'https://hikkoshimap.com/sitemap.xml',
+    sitemap: 'https://noise-map-phi.vercel.app/sitemap.xml',
   };
 }

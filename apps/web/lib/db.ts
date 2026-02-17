@@ -480,12 +480,10 @@ export async function getLinesList() {
     }
   }
 
-  // 各路線の駅IDリストから治安スコアを取得
-  const allStationIds = [...new Set((data ?? []).map((r) => r.id))];
+  // 全駅の治安スコアを取得（.in() で800件超のUUIDを渡すとURL長制限でBad Requestになるため、全件取得）
   const { data: scores, error: scoresError } = await supabase
     .from('safety_scores')
     .select('station_id, score')
-    .in('station_id', allStationIds)
     .eq('year', year);
 
   if (scoresError) throw scoresError;
