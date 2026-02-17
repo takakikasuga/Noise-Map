@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ScoreBadge } from '@hikkoshimap/ui';
 import { SITE_URL } from '@/lib/site';
 import { getLinesList, getStationsByLine } from '@/lib/db';
-import { lineNameToSlug, slugToLineName } from '@/lib/line-slug';
+import { slugToLineName } from '@/lib/line-slug';
 
 interface LineStation {
   id: string;
@@ -17,10 +17,10 @@ interface LineStation {
   totalCrimes: number;
 }
 
-/** SSG: 全路線のスラッグを生成 */
+/** SSG: 全路線のスラッグを生成（生の日本語文字列を返し、URL エンコードは Next.js に委譲） */
 export async function generateStaticParams() {
   const lines = await getLinesList();
-  return lines.map((l) => ({ slug: lineNameToSlug(l.name) }));
+  return lines.map((l) => ({ slug: l.name }));
 }
 
 /** 動的メタデータ生成 */
