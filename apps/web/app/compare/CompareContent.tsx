@@ -61,18 +61,28 @@ export function CompareContent() {
         return;
       }
 
-      // 最新年度のエリアリストを取得（name_en で重複排除）
-      const { data } = await supabase
-        .from('town_crimes')
-        .select('area_name, name_en')
-        .eq('year', year)
-        .not('name_en', 'is', null)
-        .order('area_name');
+      // 最新年度のエリアリストを全件取得（Supabase デフォルト上限 1000 行を回避）
+      const PAGE_SIZE = 1000;
+      let allRows: { area_name: string; name_en: string }[] = [];
+      let from = 0;
+      while (true) {
+        const { data: page } = await supabase
+          .from('town_crimes')
+          .select('area_name, name_en')
+          .eq('year', year)
+          .not('name_en', 'is', null)
+          .order('area_name')
+          .range(from, from + PAGE_SIZE - 1);
+        if (!page || page.length === 0) break;
+        allRows = allRows.concat(page);
+        if (page.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
 
       // name_en で重複排除
       const seen = new Set<string>();
       const deduped: AreaSearchItem[] = [];
-      for (const row of data ?? []) {
+      for (const row of allRows) {
         if (!seen.has(row.name_en)) {
           seen.add(row.name_en);
           deduped.push({ area_name: row.area_name, name_en: row.name_en });

@@ -265,23 +265,35 @@ export async function getRecentUgcPosts(limit: number = 5) {
 
 /**
  * 全エリアを取得（generateStaticParams 用）
+ * Supabase デフォルト上限 1000 行を回避するためページネーションで全件取得
  */
 export async function getAllAreas() {
   const supabase = createSupabaseClient();
   const year = await getLatestYear();
-  const { data, error } = await supabase
-    .from('town_crimes')
-    .select('name_en')
-    .eq('year', year)
-    .not('name_en', 'is', null)
-    .not('area_name', 'like', '%以下不詳%')
-    .order('name_en');
 
-  if (error) throw error;
+  const PAGE_SIZE = 1000;
+  let allRows: { name_en: string }[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('town_crimes')
+      .select('name_en')
+      .eq('year', year)
+      .not('name_en', 'is', null)
+      .not('area_name', 'like', '%以下不詳%')
+      .order('name_en')
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    allRows = allRows.concat(data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
 
   // DISTINCT: name_en で重複を排除
   const seen = new Set<string>();
-  const unique = (data ?? []).filter((d) => {
+  const unique = allRows.filter((d) => {
     if (seen.has(d.name_en)) return false;
     seen.add(d.name_en);
     return true;
@@ -334,20 +346,33 @@ export async function getAreaSafety(nameEn: string) {
 
 /**
  * 検索オートコンプリート用のエリアリスト
+ * Supabase デフォルト上限 1000 行を回避するためページネーションで全件取得
  */
 export async function getAreaListForSearch() {
   const supabase = createSupabaseClient();
   const year = await getLatestYear();
-  const { data, error } = await supabase
-    .from('town_crimes')
-    .select('area_name, name_en')
-    .eq('year', year)
-    .not('name_en', 'is', null)
-    .not('area_name', 'like', '%以下不詳%')
-    .order('area_name');
 
-  if (error) throw error;
-  return snakeToCamelArray(data ?? []);
+  const PAGE_SIZE = 1000;
+  let allRows: { area_name: string; name_en: string }[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from('town_crimes')
+      .select('area_name, name_en')
+      .eq('year', year)
+      .not('name_en', 'is', null)
+      .not('area_name', 'like', '%以下不詳%')
+      .order('area_name')
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    allRows = allRows.concat(data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return snakeToCamelArray(allRows);
 }
 
 /**
