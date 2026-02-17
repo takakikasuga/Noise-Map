@@ -17,10 +17,12 @@ import { StationMap } from '@/components/map/StationMap';
 import { UgcSection } from '@/components/ugc/UgcSection';
 import { NearbyStationsSection } from '@/components/station/NearbyStationsSection';
 
-/** SSG: 全エリアのスラッグを生成 */
+/** ビルド時にプリレンダリングする上位エリア（残りは ISR でオンデマンド生成） */
 export async function generateStaticParams() {
   const areas = await getAllAreas();
-  return areas.map((a) => ({ slug: (a as { nameEn: string }).nameEn }));
+  // Supabase 無料枠のビルド時同時接続数制限を回避するため上位 1000 件のみ SSG
+  // 残りは dynamicParams = true（デフォルト）により初回アクセス時に生成・キャッシュ
+  return areas.slice(0, 1000).map((a) => ({ slug: (a as { nameEn: string }).nameEn }));
 }
 
 /** 動的メタデータ生成 */
