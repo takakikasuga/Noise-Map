@@ -166,7 +166,7 @@ export default async function MethodologyPage() {
               <tr>
                 <td className="py-3 pr-4 font-medium">エリアスコア</td>
                 <td className="py-3 pr-4">町丁目</td>
-                <td className="py-3">警視庁CSVの町丁目レベルの犯罪件数をそのまま使用。約5,250エリアを対象に偏差値化。</td>
+                <td className="py-3">警視庁CSVの町丁目レベルの犯罪件数をそのまま使用。約5,350エリアを対象に偏差値化。</td>
               </tr>
             </tbody>
           </table>
@@ -236,12 +236,12 @@ export default async function MethodologyPage() {
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-red-700">0（危険）</span>
           <div className="h-6 flex-1 rounded-md" style={{ background: 'linear-gradient(to right, hsl(0,70%,45%), hsl(60,70%,45%), hsl(120,70%,45%))' }} />
-          <span className="text-sm font-medium text-green-700">55（安全）</span>
+          <span className="text-sm font-medium text-green-700">100（安全）</span>
         </div>
         <div className="text-xs text-gray-500 space-y-1">
           <p>偏差値 0 → 赤（hsl(0, 70%, 45%)）</p>
-          <p>偏差値 27.5 → 黄（hsl(60, 70%, 45%)）</p>
-          <p>偏差値 55 → 緑（hsl(120, 70%, 45%)）</p>
+          <p>偏差値 50 → 黄（hsl(60, 70%, 45%)）</p>
+          <p>偏差値 100 → 緑（hsl(120, 70%, 45%)）</p>
         </div>
       </section>
 
@@ -251,7 +251,7 @@ export default async function MethodologyPage() {
         <ul className="space-y-2 text-sm text-gray-700">
           <li className="flex gap-2">
             <span className="text-green-600 font-bold">&#10003;</span>
-            東京都本土部の約659駅（島嶼部除く） + 約5,250エリア
+            東京都本土部の約659駅（島嶼部除く） + 約5,350エリア
           </li>
           <li className="flex gap-2">
             <span className="text-green-600 font-bold">&#10003;</span>
@@ -290,7 +290,7 @@ export default async function MethodologyPage() {
         <ul className="space-y-2 text-sm text-gray-700">
           <li className="flex gap-3">
             <span className="shrink-0 text-gray-400">2025年2月</span>
-            <span>サイト公開。治安（Safety）・雰囲気（Vibe）レイヤー対応。659駅 + 5,250エリアの偏差値を掲載。</span>
+            <span>サイト公開。治安（Safety）・雰囲気（Vibe）レイヤー対応。659駅 + 5,350エリアの偏差値を掲載。</span>
           </li>
         </ul>
       </section>

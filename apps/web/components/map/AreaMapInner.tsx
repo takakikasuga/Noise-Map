@@ -49,7 +49,7 @@ function Legend() {
           <span>安全</span>
         </div>
         <div style="display:flex;justify-content:space-between;width:100px;margin-left:20px;">
-          <span>0</span><span>27</span><span>55</span>
+          <span>0</span><span>50</span><span>100</span>
         </div>
       `;
       return div;
@@ -65,12 +65,12 @@ function Legend() {
 }
 
 const SCORE_RANGES = [
-  { label: 'すべて', min: 0, max: 55 },
+  { label: 'すべて', min: 0, max: 100 },
   { label: '〜30（危険）', min: 0, max: 30 },
   { label: '30〜40', min: 30, max: 40 },
-  { label: '40〜45', min: 40, max: 45 },
-  { label: '45〜50', min: 45, max: 50 },
-  { label: '50〜55（安全）', min: 50, max: 55 },
+  { label: '40〜50', min: 40, max: 50 },
+  { label: '50〜60', min: 50, max: 60 },
+  { label: '60〜（安全）', min: 60, max: 100 },
 ] as const;
 
 const TOKYO_CENTER: [number, number] = [35.682, 139.764];
@@ -99,7 +99,7 @@ export default function AreaMapInner() {
   const filteredData = useMemo<FeatureCollection | null>(() => {
     if (!allData) return null;
     const range = SCORE_RANGES[activeRange];
-    if (range.min === 0 && range.max === 55) return allData;
+    if (range.min === 0 && range.max === 100) return allData;
 
     return {
       type: 'FeatureCollection',

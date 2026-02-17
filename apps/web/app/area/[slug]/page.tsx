@@ -40,10 +40,12 @@ export async function generateMetadata({
 
   const areaName = area.areaName as string;
   const municipalityName = area.municipalityName as string;
-  const score = area.score as number;
+  const score = area.score as number | null;
 
   const title = `${areaName}の治安情報・犯罪データ`;
-  const description = `${areaName}（${municipalityName}）の治安偏差値${score.toFixed(1)}。犯罪件数・種別の推移を客観データで評価。引越し前に知りたい治安情報を掲載。`;
+  const description = score
+    ? `${areaName}（${municipalityName}）の治安偏差値${score.toFixed(1)}。犯罪件数・種別の推移を客観データで評価。引越し前に知りたい治安情報を掲載。`
+    : `${areaName}（${municipalityName}）の治安情報。犯罪件数・種別の推移を客観データで評価。引越し前に知りたい治安情報を掲載。`;
 
   return {
     title,
@@ -161,11 +163,13 @@ export default async function AreaPage({
               {municipalityName}
             </span>
           </div>
-          {latestSafety && (
+          {latestSafety && latestSafety.score ? (
             <div className="mt-3 flex items-center gap-1.5 text-sm">
               <span className="text-gray-500">治安</span>
               <ScoreBadge score={latestSafety.score} />
             </div>
+          ) : (
+            <p className="mt-3 text-sm text-gray-400">治安データなし</p>
           )}
         </section>
 
@@ -178,7 +182,7 @@ export default async function AreaPage({
         {/* 治安セクション */}
         <section className="rounded-lg border bg-white p-6">
           {safetyForClient.length > 0 ? (
-            <SafetySection data={safetyForClient} totalCount={5250} entityLabel="エリア" />
+            <SafetySection data={safetyForClient} totalCount={5348} entityLabel="エリア" />
           ) : (
             <div>
               <h2 className="text-xl font-semibold">治安</h2>
