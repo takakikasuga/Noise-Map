@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
 // サイト共通メタデータ
@@ -45,6 +47,8 @@ export default function RootLayout({
         <main id="main" className="mx-auto max-w-7xl px-4 py-8">
           {children}
         </main>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
