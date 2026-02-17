@@ -28,7 +28,7 @@ export async function GET() {
     offset += PAGE_SIZE;
   }
 
-  const features = allRows.map((row) => ({
+  const features = allRows.filter((row) => row.name_en != null).map((row) => ({
     type: 'Feature' as const,
     geometry: JSON.parse(row.geojson),
     properties: {

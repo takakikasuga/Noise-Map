@@ -125,9 +125,12 @@ export default function AreaMapInner() {
   const onEachFeature = useCallback(
     (feature: Feature, layer: L.Layer) => {
       const props = feature.properties as AreaProperties;
+      const nameHtml = props.nameEn
+        ? `<a href="/area/${props.nameEn}" style="font-weight:600;color:#2563eb;">${props.areaName}</a>`
+        : `<span style="font-weight:600;">${props.areaName}</span>`;
       layer.bindPopup(
         `<div style="text-align:center;">
-          <a href="/area/${props.nameEn}" style="font-weight:600;color:#2563eb;">${props.areaName}</a>
+          ${nameHtml}
           <div style="margin-top:4px;font-size:13px;">偏差値 <strong>${props.score.toFixed(1)}</strong></div>
         </div>`,
       );
