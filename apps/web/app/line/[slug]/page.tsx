@@ -5,6 +5,7 @@ import { ScoreBadge } from '@hikkoshimap/ui';
 import { SITE_URL } from '@/lib/site';
 import { getLinesList, getStationsByLine } from '@/lib/db';
 import { slugToLineName } from '@/lib/line-slug';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 
 interface LineStation {
   id: string;
@@ -112,6 +113,15 @@ export default async function LinePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="space-y-8">
+        {/* パンくずナビゲーション */}
+        <Breadcrumb
+          items={[
+            { label: 'ホーム', href: '/' },
+            { label: '路線一覧', href: '/line' },
+            { label: lineName },
+          ]}
+        />
+
         {/* ヘッダー */}
         <section>
           <h1 className="text-3xl font-bold">{lineName}の治安ランキング</h1>

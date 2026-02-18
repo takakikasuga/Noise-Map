@@ -26,8 +26,59 @@ function ExtLink({ href, children }: { href: string; children: React.ReactNode }
 
 export default async function MethodologyPage() {
   const yearRange = await getYearRange();
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'ヒッコシマップではどのようなデータソースを使用していますか？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'すべて公的機関が公開するオープンデータに基づいています。治安データは警視庁の「区市町村の町丁別、罪種別及び手口別認知件数」、駅マスタは国土数値情報の鉄道データ（国土交通省）、人口統計はe-Stat（総務省統計局）、施設情報はOpenStreetMap Overpass APIを使用しています。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '治安スコア（偏差値）はどのように算出していますか？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '警視庁CSVから犯罪認知件数（刑法犯合計）を取得し、犯罪が少ないほど高得点になるよう反転処理を行った上で、偏差値の公式（50 + 10 × (x − μ) / σ）を適用しています。結果は0〜100の範囲にクリップし、偏差値の降順でランキングを付与しています。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '駅スコアとエリアスコアの違いは何ですか？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '駅スコアは駅が属する市区町村全体の犯罪件数合計を使用し、東京都本土部の約659駅を対象に偏差値化しています。エリアスコアは警視庁CSVの町丁目レベルの犯罪件数をそのまま使用し、約5,350エリアを対象に偏差値化しています。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '犯罪種別はどのように分類されていますか？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '警察庁の「包括罪種」分類に準拠し、刑法犯を凶悪犯（殺人・強盗・放火・強制性交等）、粗暴犯（暴行・傷害・脅迫・恐喝）、窃盗犯（空き巣・ひったくり・万引き等）、知能犯（詐欺・横領等）、風俗犯（賭博・わいせつ）、その他の刑法犯の6カテゴリに分類しています。',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: '対象エリアはどこですか？',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: '東京都本土部の約659駅と約5,350エリアが対象です。23区は町丁目（丁目）レベル、多摩地域は市町村レベルの犯罪データを使用しています。島嶼部（大島町・三宅村・八丈町等）は鉄道駅がなく対象外です。',
+        },
+      },
+    ],
+  };
+
   return (
     <div className="space-y-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <section className="text-center py-6">
         <h1 className="text-3xl font-bold tracking-tight">データについて</h1>
         <p className="mt-3 text-gray-600">

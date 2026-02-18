@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import type { AreaSafety, AreaVibeData } from '@hikkoshimap/shared';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
 import { ScoreBadge } from '@hikkoshimap/ui';
@@ -11,6 +12,7 @@ import {
   getNearbyStations,
 } from '@/lib/db';
 import { SITE_URL } from '@/lib/site';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { SafetySection } from '@/components/station/SafetySection';
 import { VibeSection } from '@/components/station/VibeSection';
 import { StationMap } from '@/components/map/StationMap';
@@ -157,13 +159,33 @@ export default async function AreaPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="space-y-8">
+        {/* パンくずナビゲーション */}
+        <Breadcrumb
+          items={[
+            { label: 'ホーム', href: '/' },
+            ...(citySlug
+              ? [{ label: municipalityName, href: `/city/${citySlug}` }]
+              : []),
+            { label: areaName },
+          ]}
+        />
+
         {/* エリアヘッダー */}
         <section>
           <h1 className="text-3xl font-bold">{areaName}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-              {municipalityName}
-            </span>
+            {citySlug ? (
+              <Link
+                href={`/city/${citySlug}`}
+                className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 transition"
+              >
+                {municipalityName}
+              </Link>
+            ) : (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                {municipalityName}
+              </span>
+            )}
           </div>
           {latestSafety && latestSafety.score != null ? (
             <div className="mt-3 flex items-center gap-1.5 text-sm">
@@ -217,6 +239,17 @@ export default async function AreaPage({
             <StationMap lat={lat} lng={lng} stationName={areaName} />
           </section>
         )}
+
+        {/* 比較ページ誘導 */}
+        <div className="flex justify-center">
+          <Link
+            href="/compare"
+            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+          >
+            他のエリアと比較する
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+        </div>
       </div>
     </>
   );

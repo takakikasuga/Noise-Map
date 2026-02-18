@@ -21,6 +21,14 @@ export const metadata: Metadata = {
   },
   description: '東京都全域の住環境リスク情報を駅単位で可視化する引越しマップ。治安・災害・街の雰囲気を客観データで忖度なく提供。',
   keywords: ['引越しマップ', '引っ越し', 'ヒッコシマップ', '東京', '治安', '災害リスク', '住環境', '駅'],
+  openGraph: {
+    type: 'website',
+    locale: 'ja_JP',
+    siteName: 'ヒッコシマップ',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 };
 
 export default function RootLayout({
@@ -32,6 +40,10 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <meta name="theme-color" content="#f9fafb" />
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && (
+          <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
+        )}
+        <link rel="dns-prefetch" href="https://tile.openstreetmap.org" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -41,6 +53,14 @@ export default function RootLayout({
               name: 'ヒッコシマップ',
               alternateName: ['引越しマップ', '引っ越しマップ'],
               url: SITE_URL,
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+                },
+                'query-input': 'required name=search_term_string',
+              },
             }),
           }}
         />

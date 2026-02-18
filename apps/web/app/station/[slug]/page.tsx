@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import type { SafetyScore } from '@hikkoshimap/shared';
 import type { HazardData } from '@hikkoshimap/shared';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
@@ -13,6 +14,8 @@ import {
   getNearbyAreas,
 } from '@/lib/db';
 import { SITE_URL } from '@/lib/site';
+import { lineNameToSlug } from '@/lib/line-slug';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { SafetySection } from '@/components/station/SafetySection';
 import { HazardSection } from '@/components/station/HazardSection';
 import { NearbyAreasSection } from '@/components/station/NearbyAreasSection';
@@ -147,20 +150,41 @@ export default async function StationPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="space-y-8">
+        {/* パンくずナビゲーション */}
+        <Breadcrumb
+          items={[
+            { label: 'ホーム', href: '/' },
+            ...(citySlug
+              ? [{ label: municipalityName, href: `/city/${citySlug}` }]
+              : []),
+            { label: `${name}駅` },
+          ]}
+        />
+
         {/* 駅ヘッダー */}
         <section>
           <h1 className="text-3xl font-bold">{name}駅</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-              {municipalityName}
-            </span>
+            {citySlug ? (
+              <Link
+                href={`/city/${citySlug}`}
+                className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 transition"
+              >
+                {municipalityName}
+              </Link>
+            ) : (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                {municipalityName}
+              </span>
+            )}
             {lines.map((line) => (
-              <span
+              <Link
                 key={line}
-                className="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700"
+                href={`/line/${lineNameToSlug(line)}`}
+                className="rounded-full bg-blue-50 px-3 py-1 text-sm text-blue-700 hover:bg-blue-100 transition"
               >
                 {line}
-              </span>
+              </Link>
             ))}
           </div>
           {hazardData && (
@@ -212,6 +236,17 @@ export default async function StationPage({
           <h2 className="mb-4 text-xl font-semibold">周辺マップ</h2>
           <StationMap lat={lat} lng={lng} stationName={name} />
         </section>
+
+        {/* 比較ページ誘導 */}
+        <div className="flex justify-center">
+          <Link
+            href="/compare"
+            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+          >
+            他のエリアと比較する
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+        </div>
       </div>
     </>
   );

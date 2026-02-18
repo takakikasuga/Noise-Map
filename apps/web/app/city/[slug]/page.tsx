@@ -9,6 +9,7 @@ import {
   getAreasByMunicipality,
   getMunicipalityCrimeStats,
 } from '@/lib/db';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { AreaList } from '@/components/city/AreaList';
 
 interface CityStation {
@@ -148,6 +149,14 @@ export default async function CityPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <div className="space-y-8">
+        {/* パンくずナビゲーション */}
+        <Breadcrumb
+          items={[
+            { label: 'ホーム', href: '/' },
+            { label: muni.name },
+          ]}
+        />
+
         {/* ヘッダー */}
         <section>
           <h1 className="text-3xl font-bold">{muni.name}</h1>
