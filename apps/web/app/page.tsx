@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TOKYO_MUNICIPALITIES } from '@hikkoshimap/shared';
 import { ScoreBadge } from '@hikkoshimap/ui';
@@ -5,6 +6,12 @@ import { getStationListForSearch, getStationListForMap, getTopAreas, getBottomAr
 import { SearchBar } from '@/components/ui/SearchBar';
 import { OverviewMap } from '@/components/map/OverviewMap';
 import { AreaMap } from '@/components/map/AreaMap';
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
 
 const WARDS = TOKYO_MUNICIPALITIES.filter((m) => m.name.endsWith('区'));
 const TAMA = TOKYO_MUNICIPALITIES.filter((m) => !m.name.endsWith('区'));

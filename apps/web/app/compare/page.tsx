@@ -5,6 +5,9 @@ import { CompareContent } from './CompareContent';
 export const metadata: Metadata = {
   title: 'エリア比較',
   description: '複数のエリアの住環境リスクを横並びで比較',
+  alternates: {
+    canonical: '/compare',
+  },
 };
 
 export default function ComparePage() {

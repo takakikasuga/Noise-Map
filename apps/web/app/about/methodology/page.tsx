@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: 'データについて',
   description:
     'ヒッコシマップで使用しているデータソース、偏差値の算出方法、犯罪種別の定義、カバレッジについて説明します。',
+  alternates: {
+    canonical: '/about/methodology',
+  },
 };
 
 function ExtLink({ href, children }: { href: string; children: React.ReactNode }) {
