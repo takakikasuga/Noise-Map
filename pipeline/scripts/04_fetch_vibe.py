@@ -161,6 +161,7 @@ def main(args):
 
         daytime = daytime_by_muni.get(muni_code, {})
 
+        total_pop = estat.get("total_population", None)
         young_ratio = estat.get("young_ratio", 0.0)
         family_ratio = estat.get("family_ratio", 0.0)
         elderly_ratio = estat.get("elderly_ratio", 0.0)
@@ -187,6 +188,7 @@ def main(args):
 
         return {
             "area_name": area["area_name"],
+            "total_population": total_pop,
             "population_young_ratio": young_ratio,
             "population_family_ratio": family_ratio,
             "population_elderly_ratio": elderly_ratio,

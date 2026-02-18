@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib.geo_utils import romanize_station_name
 from lib.normalizer import normalize_score
-from lib.supabase_client import get_client
+from lib.supabase_client import get_client, select_all
 
 logging.basicConfig(
     level=logging.INFO,
@@ -80,13 +80,28 @@ def generate_area_slugs(rows: list[dict]) -> dict[str, str]:
     return slug_map
 
 
-def calculate_area_scores(rows: list[dict]) -> dict[str, dict[str, float | int]]:
+def fetch_population_map() -> dict[str, int | None]:
+    """area_vibe_data から area_name → total_population のマップを取得"""
+    rows = select_all("area_vibe_data", "area_name,total_population")
+    pop_map: dict[str, int | None] = {}
+    for r in rows:
+        pop_map[r["area_name"]] = r.get("total_population")
+    logger.info("人口データ取得: %d エリア", len(pop_map))
+    return pop_map
+
+
+def calculate_area_scores(
+    rows: list[dict], pop_map: dict[str, int | None]
+) -> dict[str, dict[str, float | int | None]]:
     """
-    年ごとに偏差値・ランクを計算。
-    犯罪が少ないほど高スコア。
+    年ごとに犯罪率ベースで偏差値・ランクを計算。
+    犯罪率 = total_crimes / population * 1000（千人あたり）
+    犯罪率が低いほど高スコア。
+
+    人口データなし or 人口0 のエリアは score=None, rank=None, crime_rate=None。
 
     Returns:
-        {row_id: {"score": float, "rank": int}}
+        {row_id: {"score": float|None, "rank": int|None, "crime_rate": float|None}}
     """
     by_year: dict[int, list[dict]] = defaultdict(list)
     for r in rows:
@@ -98,26 +113,39 @@ def calculate_area_scores(rows: list[dict]) -> dict[str, dict[str, float | int]]
         year_rows = by_year[year]
         logger.info("  %d年: %d エリア", year, len(year_rows))
 
-        all_totals = [r["total_crimes"] for r in year_rows]
-        max_crimes = max(all_totals) if all_totals else 0
+        # 犯罪率を計算（人口データありのエリアのみ）
+        scored_rows: list[tuple[dict, float]] = []
+        skipped = 0
+        for r in year_rows:
+            pop = pop_map.get(r["area_name"])
+            if pop is None or pop == 0:
+                result[r["id"]] = {"score": None, "rank": None, "crime_rate": None}
+                skipped += 1
+                continue
+            crime_rate = r["total_crimes"] / pop * 1000
+            scored_rows.append((r, crime_rate))
 
-        if max_crimes == 0:
-            for r in year_rows:
-                result[r["id"]] = {"score": 50.0, "rank": 1}
+        if skipped:
+            logger.info("    人口データなし: %d エリア → スコア計算不可", skipped)
+
+        if not scored_rows:
             continue
 
-        # 犯罪件数を反転（少ないほど高スコア）
-        inverted = [max_crimes - t for t in all_totals]
+        # 犯罪率を反転（低い犯罪率 = 高スコア）
+        all_rates = [cr for _, cr in scored_rows]
+        max_rate = max(all_rates)
+        inverted = [max_rate - cr for cr in all_rates]
         scores = normalize_score(inverted)
 
         # ランキング（スコア降順）
         indexed = sorted(enumerate(scores), key=lambda x: -x[1])
         rank_map = {idx: rank + 1 for rank, (idx, _) in enumerate(indexed)}
 
-        for i, r in enumerate(year_rows):
+        for i, (r, crime_rate) in enumerate(scored_rows):
             result[r["id"]] = {
                 "score": round(scores[i], 1),
                 "rank": rank_map[i],
+                "crime_rate": round(crime_rate, 2),
             }
 
     return result
@@ -140,12 +168,16 @@ def main(args):
     slug_map = generate_area_slugs(rows)
     logger.info("スラッグ生成完了: %d エリア", len(slug_map))
 
-    # 3. 偏差値計算
-    logger.info("=== 偏差値計算 ===")
-    score_map = calculate_area_scores(rows)
+    # 3. 人口データ取得
+    logger.info("=== 人口データ取得 ===")
+    pop_map = fetch_population_map()
+
+    # 4. 偏差値計算（犯罪率ベース）
+    logger.info("=== 偏差値計算（犯罪率ベース）===")
+    score_map = calculate_area_scores(rows, pop_map)
     logger.info("偏差値計算完了: %d 行", len(score_map))
 
-    # 4. 更新レコード作成（全NOT NULLカラムを含めてUPSERT）
+    # 5. 更新レコード作成（全NOT NULLカラムを含めてUPSERT）
     updates = []
     for r in rows:
         name_en = slug_map.get(r["area_name"])
@@ -153,35 +185,42 @@ def main(args):
         updates.append({
             **r,
             "name_en": name_en,
-            "score": scores.get("score", 0),
+            "score": scores.get("score"),
             "rank": scores.get("rank"),
+            "crime_rate": scores.get("crime_rate"),
         })
 
     if args.dry_run:
         logger.info("[DRY RUN] %d 件の更新をスキップ", len(updates))
-        # サンプル表示
-        sample = sorted(updates, key=lambda x: -(x.get("score") or 0))
+        # サンプル表示（スコアあり のみ）
+        scored = [u for u in updates if u.get("score") is not None]
+        unscored = len(updates) - len(scored)
+        if unscored:
+            logger.info("  スコア算出不可（人口データなし）: %d 件", unscored)
+        sample = sorted(scored, key=lambda x: -(x.get("score") or 0))
         logger.info("  === 安全なエリア TOP 10 ===")
         for u in sample[:10]:
             area = next((r for r in rows if r["id"] == u["id"]), None)
             if area:
                 logger.info(
-                    "    #%s %s | 犯罪計=%d | 偏差値=%.1f | slug=%s",
+                    "    #%s %s | 犯罪計=%d | 犯罪率=%.2f | 偏差値=%.1f | slug=%s",
                     u["rank"], area["area_name"],
-                    area["total_crimes"], u["score"], u["name_en"],
+                    area["total_crimes"], u.get("crime_rate", 0),
+                    u["score"], u["name_en"],
                 )
-        logger.info("  === 犯罪が多いエリア BOTTOM 10 ===")
+        logger.info("  === 犯罪率が高いエリア BOTTOM 10 ===")
         for u in sample[-10:]:
             area = next((r for r in rows if r["id"] == u["id"]), None)
             if area:
                 logger.info(
-                    "    #%s %s | 犯罪計=%d | 偏差値=%.1f | slug=%s",
+                    "    #%s %s | 犯罪計=%d | 犯罪率=%.2f | 偏差値=%.1f | slug=%s",
                     u["rank"], area["area_name"],
-                    area["total_crimes"], u["score"], u["name_en"],
+                    area["total_crimes"], u.get("crime_rate", 0),
+                    u["score"], u["name_en"],
                 )
         return
 
-    # 5. バッチ UPSERT（全カラム含むため NOT NULL 制約を満たす）
+    # 6. バッチ UPSERT（全カラム含むため NOT NULL 制約を満たす）
     client = get_client()
     batch_size = 100
     total = 0

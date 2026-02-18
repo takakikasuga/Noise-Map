@@ -28,8 +28,10 @@ export function HazardSection({ data }: HazardSectionProps) {
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">⚠️ 災害リスク (Hazard)</h2>
 
-      <ScoreGauge score={data.score} label="災害リスク偏差値" />
+      <ScoreGauge score={data.score} label="災害安全スコア" />
 
+      <p className="text-xs text-gray-500 mb-2">このスコアは洪水・土砂災害・津波・液状化の実測リスクデータから算出した独自指標です（偏差値ではありません）。</p>
+      <p className="text-xs text-gray-500 mb-2">各項目 0〜25点（高いほど安全）</p>
       <div className="space-y-3">
         {subScores.map((s) => (
           <div key={s.key} className="flex items-center gap-3">

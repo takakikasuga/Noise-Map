@@ -594,6 +594,33 @@ export async function getNearbyAreas(lat: number, lng: number, radiusM = 500) {
 }
 
 /**
+ * スコア付きエリア数を取得（最新年）
+ */
+export const getAreaCount = cache(async function getAreaCount(): Promise<number> {
+  const supabase = createSupabaseClient();
+  const year = await getLatestYear();
+  const { count } = await supabase
+    .from('town_crimes')
+    .select('*', { count: 'exact', head: true })
+    .eq('year', year)
+    .not('score', 'is', null);
+  return count ?? 0;
+});
+
+/**
+ * 駅数を取得（最新年）
+ */
+export const getStationCount = cache(async function getStationCount(): Promise<number> {
+  const supabase = createSupabaseClient();
+  const { count } = await supabase
+    .from('safety_scores')
+    .select('*', { count: 'exact', head: true })
+    .eq('year', await getLatestYear())
+    .not('score', 'is', null);
+  return count ?? 0;
+});
+
+/**
  * エリア座標から半径内の駅を取得（PostGIS空間クエリ）
  */
 export async function getNearbyStations(lat: number, lng: number, radiusM = 1000) {

@@ -5,6 +5,7 @@ GeoJSONパース、逆ジオコーディング、ローマ字変換
 
 import json
 import logging
+import math
 import re
 import time
 from pathlib import Path
@@ -323,6 +324,26 @@ def forward_geocode_gsi(address: str) -> tuple[float, float] | None:
 
 
 # ── 後方互換（他スクリプトから参照される可能性） ──────────
+
+
+def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """
+    2点間のHaversine距離を計算（メートル単位）。
+
+    Args:
+        lat1, lng1: 地点1の緯度・経度（度）
+        lat2, lng2: 地点2の緯度・経度（度）
+
+    Returns:
+        距離（メートル）
+    """
+    R = 6_371_000  # 地球の半径（メートル）
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lng2 - lng1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 def get_nearby_towns(lat: float, lng: float, radius_m: float = 1000) -> list[str]:

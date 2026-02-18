@@ -9,6 +9,7 @@ import {
   getStationBySlug,
   getStationSafety,
   getStationHazard,
+  getStationCount,
   getNearbyAreas,
 } from '@/lib/db';
 import { SITE_URL } from '@/lib/site';
@@ -71,10 +72,11 @@ export default async function StationPage({
 
   const stationId = station.id as string;
 
-  const [safetyData, hazardData, nearbyAreas] = await Promise.all([
+  const [safetyData, hazardData, nearbyAreas, stationCount] = await Promise.all([
     getStationSafety(stationId),
     getStationHazard(stationId),
     getNearbyAreas(station.lat as number, station.lng as number),
+    getStationCount(),
   ]);
 
   const name = station.name as string;
@@ -185,12 +187,12 @@ export default async function StationPage({
 
         {/* 治安セクション（参考: 市区町村全体） */}
         <section className="rounded-lg border bg-white p-6">
-          <p className="mb-3 text-xs text-gray-500">
-            ※ {municipalityName}全体の犯罪統計に基づく参考値です。
+          <div className="mb-3 rounded-md border-l-4 border-blue-400 bg-blue-50 p-3 text-sm text-blue-800">
+            この偏差値は駅周辺（半径1km以内）のエリア犯罪率を集約した値です。
             駅周辺の詳細は上の「周辺エリアの治安」をご確認ください。
-          </p>
+          </div>
           {safetyForClient.length > 0 ? (
-            <SafetySection data={safetyForClient} />
+            <SafetySection data={safetyForClient} totalCount={stationCount} />
           ) : (
             <div>
               <h2 className="text-xl font-semibold">治安</h2>

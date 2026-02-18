@@ -13,6 +13,13 @@ function DataQualityNote({ level }: { level: DataSourceLevel }) {
       </div>
     );
   }
+  if (level === 'small_area') {
+    return (
+      <div className="rounded-md border-l-4 border-green-400 bg-green-50 p-3 text-sm text-green-800">
+        この地域の人口データは町丁目レベルの統計値です
+      </div>
+    );
+  }
   if (level === 'no_population') {
     return (
       <div className="rounded-md border-l-4 border-gray-300 bg-gray-50 p-3 text-sm text-gray-600">
@@ -37,7 +44,7 @@ function PopulationBar({ label, ratio, color }: { label: string; ratio: number; 
 
 function getDaytimeInterpretation(ratio: number): string {
   if (ratio > 1.5) return `オフィス街・繁華街 (昼間人口が夜間の ${ratio.toFixed(2)}倍)`;
-  if (ratio < 0.8) return 'ベッドタウン (住宅中心の静かなエリア)';
+  if (ratio < 0.8) return 'ベッドタウン (住宅中心のエリア)';
   return '昼夜バランス型';
 }
 
@@ -63,10 +70,13 @@ export function VibeSection({ data }: VibeSectionProps) {
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-base font-medium">人口構成</h3>
+        <h3 className="text-base font-medium">年齢構成</h3>
         <PopulationBar label="若年層" ratio={data.populationYoungRatio} color="bg-blue-500" />
         <PopulationBar label="ファミリー層" ratio={data.populationFamilyRatio} color="bg-green-500" />
         <PopulationBar label="高齢者 (65歳+)" ratio={data.populationElderlyRatio} color="bg-amber-500" />
+      </div>
+      <div className="space-y-3">
+        <h3 className="text-base font-medium">世帯構成</h3>
         <PopulationBar label="単身世帯" ratio={data.singleHouseholdRatio} color="bg-purple-500" />
       </div>
 

@@ -7,6 +7,7 @@ import {
   getAreaBySlug,
   getAreaSafety,
   getAreaVibe,
+  getAreaCount,
   getNearbyStations,
 } from '@/lib/db';
 import { SITE_URL } from '@/lib/site';
@@ -69,9 +70,10 @@ export default async function AreaPage({
   const { slug } = await params;
 
   // async-parallel: slug === nameEn なので並列フェッチ可能
-  const [area, safetyData] = await Promise.all([
+  const [area, safetyData, areaCount] = await Promise.all([
     getAreaBySlug(slug),
     getAreaSafety(slug),
+    getAreaCount(),
   ]);
 
   if (!area) {
@@ -182,7 +184,7 @@ export default async function AreaPage({
         {/* 治安セクション */}
         <section className="rounded-lg border bg-white p-6">
           {safetyForClient.length > 0 ? (
-            <SafetySection data={safetyForClient} totalCount={5348} entityLabel="エリア" />
+            <SafetySection data={safetyForClient} totalCount={areaCount} entityLabel="エリア" />
           ) : (
             <div>
               <h2 className="text-xl font-semibold">治安</h2>

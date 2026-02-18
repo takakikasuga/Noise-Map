@@ -135,7 +135,9 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
       </table>
 
       {selectedYear === 2025 && (
-        <p className="text-xs text-amber-600 mt-2">※ 2025年のデータは1〜11月の暫定値です</p>
+        <div className="rounded-md border-l-4 border-amber-400 bg-amber-50 p-3 text-sm text-amber-800">
+          2025年のデータは1〜11月の暫定値です。12月分のデータが含まれていないため、通年データと比較すると少なく表示されます。
+        </div>
       )}
 
       {delta != null && pctChange != null && (

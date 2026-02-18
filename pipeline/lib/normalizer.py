@@ -91,12 +91,21 @@ def calculate_hazard_score(
         スコアが高いほど安全
     """
     # 洪水スコア（0-25、浸水なし=25、5m以上=0）
+    # 閾値 5m: 国交省の洪水浸水想定区域図における最大区分が「5m以上」。
+    # 2階天井相当（約5m）を超えると垂直避難も困難になるため、
+    # 5m で完全にスコア 0 とする線形減衰を採用。
     if flood_depth is None or flood_depth <= 0:
         flood_score = 25.0
     else:
         flood_score = max(0, 25.0 - (flood_depth / 5.0) * 25.0)
 
     # 土砂災害スコア（0-25）
+    # 土砂災害防止法に基づく区域指定を利用:
+    #   - 特別警戒区域（レッドゾーン）: 建築物が破壊される危険 → 0点
+    #   - 警戒区域（イエローゾーン）: 避難が必要な危険 → 10点（満点の40%）
+    #   - 区域外: リスクなし → 25点（満点）
+    # 2段階のみで中間値がないため、警戒区域は 10/25 として
+    # 「リスクはあるが居住可能」を表現。
     if landslide_special:
         landslide_score = 0.0
     elif landslide_warning:
@@ -105,12 +114,22 @@ def calculate_hazard_score(
         landslide_score = 25.0
 
     # 津波スコア（0-25）
+    # 閾値 10m: 東日本大震災の最大浸水深（約15-20m）を踏まえ、
+    # 東京湾内で想定される最大級津波（南海トラフ等）の浸水深上限を
+    # 10m と設定。洪水（5m）より緩い傾斜なのは、東京湾内では
+    # 津波到達までに避難時間が確保できるため。
     if tsunami_depth is None or tsunami_depth <= 0:
         tsunami_score = 25.0
     else:
         tsunami_score = max(0, 25.0 - (tsunami_depth / 10.0) * 25.0)
 
     # 液状化スコア（0-25）
+    # 東京都の液状化予測図は 3 段階（低い・やや高い・高い）で公表。
+    # 各段階を等間隔に配点:
+    #   - low: 液状化の可能性が低い → 25点（満点）
+    #   - moderate: 液状化の可能性がある → 12.5点（中間）
+    #   - high: 液状化の可能性が高い → 0点
+    # 不明値は moderate 相当（12.5）としてデータ欠損時に中立扱い。
     liquefaction_scores = {'low': 25.0, 'moderate': 12.5, 'high': 0.0}
     liquefaction_score = liquefaction_scores.get(liquefaction_risk, 12.5)
 

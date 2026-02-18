@@ -5,8 +5,8 @@ interface ScoreGaugeProps {
 }
 
 function scoreToHue(score: number): number {
-  const clamped = Math.max(0, Math.min(55, score));
-  return (clamped / 55) * 120;
+  const clamped = Math.max(0, Math.min(100, score));
+  return (clamped / 100) * 120;
 }
 
 /** 偏差値ゲージコンポーネント（円形プログレス） */
@@ -28,7 +28,7 @@ export function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProps) {
         className={`flex items-center justify-center rounded-full border-4 font-bold ${sizeStyles[size]}`}
         style={{ backgroundColor: bg, borderColor: border, color: text }}
       >
-        {score}
+        {(score ?? 0).toFixed(1)}
       </div>
       <span className="text-sm text-gray-600">{label}</span>
     </div>
@@ -46,7 +46,7 @@ export function ScoreBadge({ score }: { score: number }) {
       className="inline-block rounded-full px-2.5 py-0.5 text-sm font-semibold"
       style={{ backgroundColor: bg, color: text }}
     >
-      {score.toFixed(1)}
+      {(score ?? 0).toFixed(1)}
     </span>
   );
 }
