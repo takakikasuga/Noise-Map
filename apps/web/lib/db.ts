@@ -426,6 +426,7 @@ export async function getAreasByMunicipality(municipalityName: string) {
     .eq('municipality_name', municipalityName)
     .eq('year', year)
     .not('name_en', 'is', null)
+    .not('score', 'is', null)
     .order('score', { ascending: false });
 
   if (error) throw error;

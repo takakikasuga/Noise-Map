@@ -163,7 +163,7 @@ export default async function AreaPage({
               {municipalityName}
             </span>
           </div>
-          {latestSafety && latestSafety.score ? (
+          {latestSafety && latestSafety.score != null ? (
             <div className="mt-3 flex items-center gap-1.5 text-sm">
               <span className="text-gray-500">治安</span>
               <ScoreBadge score={latestSafety.score} />
