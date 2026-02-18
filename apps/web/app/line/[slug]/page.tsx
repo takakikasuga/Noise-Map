@@ -17,11 +17,16 @@ interface LineStation {
   totalCrimes: number;
 }
 
-/** SSG: 全路線のスラッグを生成（生の日本語文字列を返し、URL エンコードは Next.js に委譲） */
+/**
+ * SSG をスキップし ISR に委譲。
+ * ビルド時に全路線分の Supabase リクエストが集中すると 500 エラーになるため、
+ * 空配列を返してオンデマンド生成 + revalidate でキャッシュする。
+ */
 export async function generateStaticParams() {
-  const lines = await getLinesList();
-  return lines.map((l) => ({ slug: l.name }));
+  return [];
 }
+
+export const revalidate = 86400; // 24時間キャッシュ
 
 /** 動的メタデータ生成 */
 export async function generateMetadata({
