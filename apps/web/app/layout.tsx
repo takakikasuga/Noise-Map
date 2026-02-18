@@ -9,12 +9,13 @@ import './globals.css';
 // サイト共通メタデータ
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  applicationName: 'ヒッコシマップ',
   title: {
-    default: 'ヒッコシマップ',
+    default: 'ヒッコシマップ（引越しマップ）',
     template: '%s | ヒッコシマップ',
   },
-  description: '東京都全域の住環境リスク情報を駅単位で可視化。治安・災害・街の雰囲気を客観データで忖度なく提供。',
-  keywords: ['引っ越し', '東京', '治安', '災害リスク', '住環境', '駅'],
+  description: '東京都全域の住環境リスク情報を駅単位で可視化する引越しマップ。治安・災害・街の雰囲気を客観データで忖度なく提供。',
+  keywords: ['引越しマップ', '引っ越し', 'ヒッコシマップ', '東京', '治安', '災害リスク', '住環境', '駅'],
 };
 
 export default function RootLayout({
@@ -26,6 +27,18 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <meta name="theme-color" content="#f9fafb" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'ヒッコシマップ',
+              alternateName: ['引越しマップ', '引っ越しマップ'],
+              url: SITE_URL,
+            }),
+          }}
+        />
       </head>
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:shadow-lg">
