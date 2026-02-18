@@ -36,7 +36,7 @@ export function NearbyAreasSection({ areas }: NearbyAreasSectionProps) {
           <Link
             key={area.nameEn}
             href={`/area/${area.nameEn}`}
-            className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-3 transition hover:bg-gray-100"
+            className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-4 transition hover:bg-gray-100"
           >
             <span className="w-6 text-center text-sm font-bold text-gray-400">{i + 1}</span>
             <span className="flex-1 font-medium text-sm">{area.areaName}</span>

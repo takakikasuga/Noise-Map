@@ -203,7 +203,7 @@ export default async function CityPage({
                 <Link
                   key={station.nameEn}
                   href={`/station/${station.nameEn}`}
-                  className="flex items-center justify-between rounded-md border px-4 py-3 transition hover:bg-gray-50"
+                  className="flex items-center justify-between rounded-md border px-4 py-4 transition hover:bg-gray-50"
                 >
                   <div>
                     <span className="font-medium">

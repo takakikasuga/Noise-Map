@@ -35,14 +35,14 @@ export function HazardSection({ data }: HazardSectionProps) {
       <div className="space-y-3">
         {subScores.map((s) => (
           <div key={s.key} className="flex items-center gap-3">
-            <span className="w-20 text-sm">{s.label}</span>
+            <span className="w-16 sm:w-20 text-sm">{s.label}</span>
             <div className="flex-1 h-2 bg-gray-200 rounded-full">
               <div
                 className={`h-2 ${s.color} rounded-full`}
                 style={{ width: `${(data[s.key] as number) * 4}%` }}
               />
             </div>
-            <span className="w-10 text-right text-sm font-medium">{data[s.key]}/25</span>
+            <span className="w-8 sm:w-10 text-right text-sm font-medium">{data[s.key]}/25</span>
           </div>
         ))}
       </div>

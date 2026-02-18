@@ -83,6 +83,11 @@ const DEFAULT_ZOOM = 11;
 
 export default function OverviewMapInner({ stations }: OverviewMapInnerProps) {
   const [activeRange, setActiveRange] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.matchMedia('(max-width: 640px)').matches);
+  }, []);
 
   const filtered = useMemo(() => {
     const range = SCORE_RANGES[activeRange];
@@ -112,12 +117,12 @@ export default function OverviewMapInner({ stations }: OverviewMapInnerProps) {
         <span className="text-xs text-gray-400">{filtered.length} 駅</span>
       </div>
 
-      <div className="h-[500px] w-full rounded-lg overflow-hidden">
+      <div className="h-[350px] sm:h-[500px] w-full rounded-lg overflow-hidden">
         <MapContainer
           center={TOKYO_CENTER}
           zoom={DEFAULT_ZOOM}
           className="h-full w-full"
-          scrollWheelZoom={true}
+          scrollWheelZoom={!isMobile}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

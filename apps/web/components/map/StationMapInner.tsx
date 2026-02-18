@@ -109,7 +109,7 @@ export default function StationMapInner({
   );
 
   return (
-    <div className="h-[400px] w-full rounded-lg overflow-hidden">
+    <div className="h-[300px] sm:h-[400px] w-full rounded-lg overflow-hidden">
       <MapContainer
         center={[lat, lng]}
         zoom={zoom}

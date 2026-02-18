@@ -149,7 +149,7 @@ export default async function LinePage({
               <Link
                 key={station.nameEn}
                 href={`/station/${station.nameEn}`}
-                className="flex items-center justify-between rounded-md border px-4 py-3 transition hover:bg-gray-50"
+                className="flex items-center justify-between rounded-md border px-4 py-4 transition hover:bg-gray-50"
               >
                 <div className="flex items-center gap-3">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">

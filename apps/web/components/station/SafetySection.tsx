@@ -69,12 +69,12 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mb-1 scrollbar-hide">
         {sorted.map((d) => (
           <button
             key={d.year}
             onClick={() => setSelectedYear(d.year)}
-            className={`rounded-md px-3 py-1 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            className={`shrink-0 rounded-md px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               d.year === selectedYear
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -106,33 +106,35 @@ export function SafetySection({ data, totalCount = 659, entityLabel = '駅' }: S
         />
       </div>
 
-      <table className="w-full text-sm tabular-nums">
-        <thead>
-          <tr className="border-b text-left">
-            <th className="py-2">種別</th>
-            <th className="py-2 text-right">件数</th>
-          </tr>
-        </thead>
-        <tbody>
-          {crimeRows.map((row) => (
-            <tr key={row.label} className="border-b">
-              <td className="py-2">
-                <span tabIndex={0} className="group relative cursor-help border-b border-dashed border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:rounded">
-                  {row.label}
-                  <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 hidden w-max max-w-[220px] rounded bg-gray-800 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block group-focus-within:block">
-                    {row.tip}
-                  </span>
-                </span>
-              </td>
-              <td className="py-2 text-right">{row.count}件</td>
+      <div className="overflow-x-auto -mx-6 px-6">
+        <table className="w-full text-sm tabular-nums">
+          <thead>
+            <tr className="border-b text-left">
+              <th className="py-2">種別</th>
+              <th className="py-2 text-right">件数</th>
             </tr>
-          ))}
-          <tr className="font-bold">
-            <td className="py-2">合計</td>
-            <td className="py-2 text-right">{selected.totalCrimes}件</td>
-          </tr>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {crimeRows.map((row) => (
+              <tr key={row.label} className="border-b">
+                <td className="py-2">
+                  <span tabIndex={0} className="group relative cursor-help border-b border-dashed border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:rounded">
+                    {row.label}
+                    <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 hidden w-max max-w-[220px] rounded bg-gray-800 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block group-focus-within:block">
+                      {row.tip}
+                    </span>
+                  </span>
+                </td>
+                <td className="py-2 text-right">{row.count}件</td>
+              </tr>
+            ))}
+            <tr className="font-bold">
+              <td className="py-2">合計</td>
+              <td className="py-2 text-right">{selected.totalCrimes}件</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       {selectedYear === 2025 && (
         <div className="rounded-md border-l-4 border-amber-400 bg-amber-50 p-3 text-sm text-amber-800">

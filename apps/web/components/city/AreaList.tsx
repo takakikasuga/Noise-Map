@@ -26,7 +26,7 @@ export function AreaList({ areas }: { areas: Area[] }) {
           <Link
             key={area.nameEn}
             href={`/area/${area.nameEn}`}
-            className="flex items-center justify-between px-3 py-2.5 transition hover:bg-gray-50"
+            className="flex items-center justify-between px-3 py-3.5 transition hover:bg-gray-50"
           >
             <span className="flex items-center gap-3">
               <span className="w-8 text-right text-xs text-gray-400">

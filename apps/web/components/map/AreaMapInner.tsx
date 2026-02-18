@@ -80,6 +80,11 @@ export default function AreaMapInner() {
   const [allData, setAllData] = useState<FeatureCollection | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeRange, setActiveRange] = useState(0); // index into SCORE_RANGES
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.matchMedia('(max-width: 640px)').matches);
+  }, []);
 
   useEffect(() => {
     fetch('/api/area-geojson', { cache: 'no-cache' })
@@ -163,12 +168,12 @@ export default function AreaMapInner() {
       {loading && (
         <div className="mb-2 text-sm text-gray-400">エリアデータを読み込み中...</div>
       )}
-      <div className="h-[500px] w-full rounded-lg overflow-hidden">
+      <div className="h-[350px] sm:h-[500px] w-full rounded-lg overflow-hidden">
         <MapContainer
           center={TOKYO_CENTER}
           zoom={DEFAULT_ZOOM}
           className="h-full w-full"
-          scrollWheelZoom={true}
+          scrollWheelZoom={!isMobile}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
