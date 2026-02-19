@@ -194,7 +194,7 @@ export function CompareContent() {
     [selectedSlugs, updateUrl],
   );
 
-  // 検索フィルタ
+  // 検索フィルタ（「市」「区」「町」「村」省略でもマッチ）
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const q = e.target.value;
@@ -204,10 +204,14 @@ export function CompareContent() {
         setShowDropdown(false);
         return;
       }
+      // 「市区町村」等を除去した正規化文字列でも比較
+      const normalize = (s: string) => s.replace(/[市区町村郡]/g, '');
+      const qNorm = normalize(q);
       const matches = allAreas
         .filter(
           (s) =>
-            s.area_name.includes(q) && !selectedSlugs.includes(s.name_en),
+            !selectedSlugs.includes(s.name_en) &&
+            (s.area_name.includes(q) || normalize(s.area_name).includes(qNorm)),
         )
         .slice(0, 10);
       setSearchResults(matches);

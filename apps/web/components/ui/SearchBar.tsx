@@ -61,9 +61,11 @@ export function SearchBar({ stations, areas = [], cities = [] }: SearchBarProps)
         }));
       results.push(...stationMatches);
 
-      // エリアを検索（部分一致）
+      // エリアを検索（部分一致、「市区町村」省略対応）
+      const normalize = (s: string) => s.replace(/[市区町村郡]/g, '');
+      const valueNorm = normalize(value);
       const areaMatches = areas
-        .filter((a) => a.areaName.includes(value))
+        .filter((a) => a.areaName.includes(value) || normalize(a.areaName).includes(valueNorm))
         .slice(0, 5)
         .map((a) => ({
           label: a.areaName,
