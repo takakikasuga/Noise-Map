@@ -20,10 +20,13 @@ DECLARE
   result_count integer;
   current_radius integer := radius_m;
   min_results integer := 10;
+  latest_year integer;
 BEGIN
+  SELECT MAX(tc.year) INTO latest_year FROM town_crimes tc;
+
   SELECT count(DISTINCT tc.name_en) INTO result_count
   FROM town_crimes tc
-  WHERE tc.year = 2025
+  WHERE tc.year = latest_year
     AND tc.lat IS NOT NULL AND tc.lng IS NOT NULL
     AND ST_DWithin(
       ST_Point(tc.lng, tc.lat)::geography,
@@ -35,7 +38,7 @@ BEGIN
     current_radius := 1000;
     SELECT count(DISTINCT tc.name_en) INTO result_count
     FROM town_crimes tc
-    WHERE tc.year = 2025
+    WHERE tc.year = latest_year
       AND tc.lat IS NOT NULL AND tc.lng IS NOT NULL
       AND ST_DWithin(
         ST_Point(tc.lng, tc.lat)::geography,
@@ -59,7 +62,7 @@ BEGIN
     tc.lat,
     tc.lng
   FROM town_crimes tc
-  WHERE tc.year = 2025
+  WHERE tc.year = latest_year
     AND tc.lat IS NOT NULL AND tc.lng IS NOT NULL
     AND ST_DWithin(
       ST_Point(tc.lng, tc.lat)::geography,
